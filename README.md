@@ -8,7 +8,7 @@ What Are the Odds is a Chrome extension that finds prediction markets related to
 
 1. Clone or download this repository. In Chrome, open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked**. Select the repository folder.
 2. Open a news article, click the extension icon, and enter an Anthropic API key in **Settings**. The key needs Claude API access and permission for direct browser requests. Live matching uses Anthropic API credits.
-3. Open the popup to see matching markets. Switch chart ranges or outcomes, open **Context** for the article connection and settlement rules, or use **Clip from page** to save evidence.
+3. Open the popup to see matching markets. Switch chart ranges or outcomes, open **Context** for the article connection and settlement rules, or use **Clip from page** to save evidence. Keep selecting passages or clicking images in the same session, then choose **Done** or **Open Info Library**.
 4. Choose **Trade**, select a side and dollar amount, and place a simulated buy or sell. The ticket shows cash, the open position, and the last completed order for that market.
 
 ## Gemini Prediction Markets

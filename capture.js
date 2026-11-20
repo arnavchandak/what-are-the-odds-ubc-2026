@@ -6,12 +6,14 @@ export function pickClip(market, demoSave) {
   host.style.cssText = 'position:fixed!important;inset:12px 12px auto auto!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;max-width:calc(100vw - 24px)!important;z-index:2147483647!important';
   const root = host.attachShadow({mode:'closed'});
   const css = document.createElement('style');
-  css.textContent = 'section{box-sizing:border-box;width:min(330px,calc(100vw - 24px));padding:14px;background:white;color:#1d3028;border:1px solid #b7c8be;border-radius:9px;box-shadow:0 4px 20px #1233;font:14px/1.4 system-ui}strong,p{display:block;margin:0 0 7px}button{padding:5px 9px;margin-right:5px;cursor:pointer;border-radius:5px;border:1px solid #acc1b4;background:white;color:#164632}button:disabled{opacity:.55}';
+  css.textContent = 'section{box-sizing:border-box;width:min(330px,calc(100vw - 24px));padding:14px;background:white;color:#1d3028;border:1px solid #b7c8be;border-radius:9px;box-shadow:0 4px 20px #1233;font:14px/1.4 system-ui}strong,p{display:block;margin:0 0 7px}section{user-select:none}button{padding:5px 9px;margin-right:5px;cursor:pointer;border-radius:5px;border:1px solid #acc1b4;background:white;color:#164632}button:disabled{opacity:.55}[hidden]{display:none}';
   const bar = document.createElement('section');
   const heading = document.createElement('strong');
   heading.textContent = market.title;
+  const status = document.createElement('p');
+  status.setAttribute('role','status');
+  status.hidden = true;
   const text = document.createElement('p');
-  text.setAttribute('role','status');
   const save = document.createElement('button');
   const library = document.createElement('button');
   const cancel = document.createElement('button');
@@ -19,7 +21,7 @@ export function pickClip(market, demoSave) {
   library.hidden = true;
   save.textContent = 'Save text';
   cancel.textContent = 'Cancel';
-  bar.append(heading,text,save,library,cancel);
+  bar.append(heading,status,text,save,library,cancel);
   root.append(css,bar);
   document.documentElement.append(host);
   host.showPopover?.();
@@ -36,12 +38,13 @@ export function pickClip(market, demoSave) {
   };
   let busy = false;
   let selection = '';
+  let savedCount = 0;
   function readSelection() {
-    if (busy || root.activeElement) return;
+    if (busy) return;
     selection = window.getSelection()?.toString().trim() || '';
     save.disabled = !selection;
     text.textContent = selection ? 'Selected: ' + selection.slice(0,90) + (selection.length > 90 ? '…' : '') :
-      'Highlight a passage, then choose Save text. Or click an article image to save it.';
+      'Highlight a passage to save text, or click an article image.';
   }
   readSelection();
   document.addEventListener('selectionchange',readSelection,options);
@@ -49,8 +52,9 @@ export function pickClip(market, demoSave) {
   save.onclick = () => { if (selection) submit({kind:'text',value:selection}); };
   async function submit(payload) {
     if (busy) return;
-    busy = true;
-    save.disabled = true;
+    busy = save.disabled = library.disabled = true;
+    status.hidden = false;
+    status.textContent = 'Saving clip…';
     try {
       if (payload.kind === 'image') {
         host.style.setProperty('visibility','hidden','important');
@@ -63,15 +67,20 @@ export function pickClip(market, demoSave) {
         const response = await chrome.runtime.sendMessage({type:'save-clip',clip});
         if (!response?.saved) throw Error(response?.error || 'The extension disconnected. Reopen it and try again.');
       }
-      text.textContent = payload.kind === 'image' ? 'Image saved to this market.' : 'Passage saved to this market.';
-      save.hidden = true;
+      savedCount++;
+      status.textContent = savedCount + (savedCount === 1 ? ' clip saved.' : ' clips saved.');
+      if (payload.kind === 'text' && window.getSelection()?.toString().trim() === payload.value) {
+        window.getSelection().removeAllRanges();
+      }
       library.hidden = false;
       cancel.textContent = 'Done';
     } catch (error) {
-      busy = false;
-      save.disabled = !selection;
-      text.textContent = error.message || 'Could not save. Try again.';
-    } finally { host.style.removeProperty('visibility'); }
+      status.textContent = error.message || 'Could not save. Try again.';
+    } finally {
+      host.style.removeProperty('visibility');
+      busy = library.disabled = false;
+      readSelection();
+    }
   }
   document.addEventListener('click',e => {
     if (busy || e.target === host) return;
