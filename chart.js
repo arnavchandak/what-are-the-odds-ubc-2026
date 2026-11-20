@@ -5,6 +5,8 @@ const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-di
 
 export const seriesColors = ['#b94a13', '#375a91', '#176b60', '#815293', '#ad3e60'];
 
+export const darkSeriesColors = ['#83bdff', '#557eff', '#e5bd5f', '#ee906a', '#c3a0ed'];
+
 export function formatOdds(value) {
   if (value == null) return '—';
   return value > 0 && value < 0.0001 ? `<${percent.format(0.0001)}` : percent.format(value);
@@ -27,7 +29,7 @@ function chartScale(min, max) {
   return { bottom, top, ticks };
 }
 
-export function renderChart(element, series, period) {
+export function renderChart(element, series, period, dark = false) {
   const available = series.filter(({ points }) => Array.isArray(points) && points.length >= 2);
   if (!available.length) {
     element.textContent = series.some(({ points }) => points === null)
@@ -42,7 +44,7 @@ export function renderChart(element, series, period) {
 
   const canvas = document.createElement('canvas');
   const width = 680;
-  const height = available.length > 1 ? 280 : 226;
+  const height = dark ? 252 : available.length > 1 ? 280 : 226;
   const density = Math.max(2, window.devicePixelRatio);
   canvas.width = width * density;
   canvas.height = height * density;
@@ -52,21 +54,21 @@ export function renderChart(element, series, period) {
   const ctx = canvas.getContext('2d');
   ctx.scale(density, density);
   const left = 7;
-  const right = width - 84;
+  const right = width - (dark ? 64 : 84);
   const high = 18;
   const low = height - 19;
-  const x = (timestamp) => left + ((timestamp - firstTime) / (lastTime - firstTime)) * (right - left);
+  const x = (timestamp) => left + ((timestamp - firstTime) / (lastTime - firstTime || 1)) * (right - left);
   const y = (value) => low - ((value - bottom) / (top - bottom)) * (low - high);
 
-  ctx.font = '19px system-ui';
+  ctx.font = (dark ? 14 : 19) + 'px system-ui';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#43564e';
-  ctx.strokeStyle = '#d9e1dd';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([4, 5]);
+  ctx.fillStyle = dark ? '#adb5c3' : '#43564e';
+  ctx.strokeStyle = dark ? '#3e444f' : '#d9e1dd';
+  ctx.lineWidth = dark ? 1 : 2;
+  ctx.setLineDash(dark ? [2, 5] : [4, 5]);
   for (const level of ticks) {
     const row = y(level);
-    ctx.fillText(formatOdds(level), right + 24, row);
+    ctx.fillText(formatOdds(level), right + (dark ? 13 : 24), row);
     ctx.beginPath();
     ctx.moveTo(left, row);
     ctx.lineTo(right, row);
@@ -79,17 +81,17 @@ export function renderChart(element, series, period) {
     ctx.moveTo(x(points[0][0]), y(points[0][1]));
     let previous = points[0][1];
     for (const [timestamp, value] of points.slice(1)) {
-      ctx.lineTo(x(timestamp), y(previous));
+      if (!dark) ctx.lineTo(x(timestamp), y(previous));
       ctx.lineTo(x(timestamp), y(value));
       previous = value;
     }
     ctx.strokeStyle = color;
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = dark ? 2 : 3.5;
     ctx.lineJoin = 'round';
     ctx.stroke();
     const [timestamp, value] = points.at(-1);
     ctx.beginPath();
-    ctx.arc(x(timestamp), y(value), 4.7, 0, Math.PI * 2);
+    ctx.arc(x(timestamp), y(value), dark ? 4 : 4.7, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
   }
@@ -100,7 +102,9 @@ export function renderChart(element, series, period) {
   let format = date;
   if (date.format(firstTime) === date.format(lastTime)) format = time;
   else if (period === '24H') format = shortDateTime;
-  for (const timestamp of [firstTime, lastTime]) {
+  const tickCount = dark && period !== '24H' && lastTime - firstTime >= 4 * 86400000 ? 4 : 2;
+  for (let i = 0; i < tickCount; i++) {
+    const timestamp = firstTime + (lastTime - firstTime) * i / (tickCount - 1);
     const label = document.createElement('span');
     label.textContent = format.format(timestamp);
     axis.append(label);

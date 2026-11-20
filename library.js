@@ -1,6 +1,7 @@
 import { listClips, saveRecoveredMarket } from './workspace.js';
-import { formatOdds, renderChart } from './chart.js';
-import { hasChart, recoverMarket } from './saved-market.js';
+import { darkSeriesColors, formatOdds, renderChart } from './chart.js';
+import { hasChart, recoverMarket, recoverMarketMetadata } from './saved-market.js';
+import { tradeTicket } from './trade.js';
 
 const main = document.querySelector('#clips');
 const title = document.querySelector('h1');
@@ -11,6 +12,7 @@ const sentences = new Intl.Segmenter('en',{granularity:'sentence'});
 const upcoming = /\b(?:scheduled|expected|deadline|upcoming|plans to|due to|will announce|will meet|will vote|set to|by (?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))\b/i;
 let urls = [];
 let loadVersion = 0;
+let displayedClips;
 
 function excerpt(value, prefer) {
   const parts = [...sentences.segment((value || '').replace(/\s+/g,' ').trim())].map(x => x.segment.trim());
@@ -29,23 +31,55 @@ function link(label,url) {
   return a;
 }
 
-function chart(market) {
+function linePrice(line) {
+  return line.price ?? line.points?.at(-1)?.[1];
+}
+
+function chart(market, expanded = false) {
   const box = make('div','','snapshot');
+  const head = make('div','','snapshot-head');
+  if (expanded) {
+    head.append(make('h2','Price history'));
+    const source = link('Open market ↗',market.marketUrl || market.source);
+    if (source.href) {
+      source.className = 'market-link';
+      head.append(source);
+    }
+  }
+  if (head.childElementCount) box.append(head);
+  const plot = make('div','','market-chart');
   if (!market.lines?.length) {
-    box.append(make('small','No chart saved with this clipping.'));
+    plot.textContent = 'No chart saved with this clipping.';
+    box.append(plot);
     return box;
   }
-  box.append(make('small',market.period + ' · Snapshot ' + dates.format(market.at)));
+  const series = market.lines.map((line,index) => ({...line,color:darkSeriesColors[index % darkSeriesColors.length]}));
+  if (Number.isFinite(market.at)) box.append(make('small',market.period + ' · Snapshot ' + dates.format(market.at)));
   const legend = make('div','','legend');
-  for (const line of market.lines) {
-    const label = make('span',line.label + ' ' + formatOdds(line.price ?? line.points.at(-1)?.[1]));
+  for (const line of series) {
+    const label = make('span',line.label + ' ' + formatOdds(linePrice(line)));
     label.style.setProperty('--line',line.color);
     legend.append(label);
   }
-  const plot = make('div','','market-chart');
-  renderChart(plot,market.lines,market.period);
+  renderChart(plot,series,market.period,true);
   box.append(legend,plot);
   return box;
+}
+
+function marketWorkspace(market) {
+  const row = make('div','','market-layout');
+  const sidebar = make('aside','','trade-sidebar');
+  sidebar.append(make('h2','Simulated trade'));
+  const outcomes = (market.lines || []).filter(line => line.historyId &&
+    Number.isFinite(linePrice(line)) && Math.round(linePrice(line)*10000) > 0 && Math.round(linePrice(line)*10000) < 10000);
+  if (outcomes.length) {
+    const ticket = make('div','','trade-ticket');
+    const show = item => tradeTicket(ticket,market.key,item,linePrice(item),outcomes,show);
+    show(outcomes[0]);
+    sidebar.append(ticket);
+  } else sidebar.append(make('p','There are no saved outcome quotes available for simulated trading.','meta'));
+  row.append(chart(market,true),sidebar);
+  return row;
 }
 
 function marketTile(market,clips) {
@@ -124,11 +158,10 @@ function detail(market,clips) {
     sourceList.append(row);
   }
   summary.append(make('h2','Sources'),sourceList);
-  return [chart(market),summary,evidence];
+  return [marketWorkspace(market),summary,evidence];
 }
 
-async function load() {
-  const version = ++loadVersion;
+async function load(force = false) {
   try {
     const groups = new Map();
     for (const clip of await listClips()) {
@@ -137,7 +170,10 @@ async function load() {
     }
     const selected = key ? [groups.get(key)].filter(Boolean) : [...groups.values()];
     const markets = selected.map(clips => clips.find(c => hasChart(c.market))?.market || clips[0].market);
-    if (version !== loadVersion) return;
+    const signature = JSON.stringify(selected.map(clips => clips.map(clip => [clip.id,clip.market.at,clip.market.marketUrl,clip.market.lines?.map(line => line.historyId)])));
+    if (!force && displayedClips === signature) return;
+    displayedClips = signature;
+    const version = ++loadVersion;
     urls.forEach(url => URL.revokeObjectURL(url));
     urls = [];
     document.querySelector('#back').hidden = !key;
@@ -151,16 +187,36 @@ async function load() {
     } else main.replaceChildren(...selected.map((clips,i) => marketTile(markets[i],clips)));
     const boxes = [...main.querySelectorAll('.snapshot')];
     await Promise.all(selected.map(async (clips,index) => {
-      if (hasChart(markets[index])) return;
+      const saved = markets[index];
       const box = boxes[index];
-      box.textContent = 'Restoring market chart…';
+      if (hasChart(saved)) {
+        if (!key || (saved.lines.every(line => line.historyId) && saved.source && (saved.venue !== 'Gemini' || saved.marketUrl))) return;
+        const updated = await recoverMarketMetadata(saved).catch(() => saved);
+        if (version !== loadVersion || (updated.marketUrl === saved.marketUrl && updated.source === saved.source &&
+            updated.lines.every((line,i) => line.historyId === saved.lines[i].historyId))) return;
+        const clip = clips.find(clip => clip.market === saved);
+        await saveRecoveredMarket(clip.id,updated).catch(() => {});
+        if (version === loadVersion) {
+          const existingLink = box.querySelector('.market-link');
+          const source = link('Open market ↗',updated.marketUrl || updated.source);
+          if (source.href) {
+            source.className = 'market-link';
+            if (existingLink) existingLink.replaceWith(source);
+            else box.querySelector('.snapshot-head').append(source);
+          }
+          if (!box.parentElement.querySelector('.trade-ticket')) box.parentElement.replaceWith(marketWorkspace(updated));
+        }
+        return;
+      }
+      const plot = box.querySelector('.market-chart');
+      plot.textContent = 'Restoring market chart…';
       const restored = await recoverMarket(clips).catch(() => null);
       if (version !== loadVersion) return;
       if (!restored) {
-        box.textContent = 'Price history is unavailable for this saved market. ';
+        plot.textContent = 'Price history is unavailable for this saved market. ';
         const retry = make('button','Retry','text-button');
-        retry.onclick = load;
-        box.append(retry);
+        retry.onclick = () => load(true);
+        plot.append(retry);
         return;
       }
       await saveRecoveredMarket(clips[0].id,restored).catch(() => {});
@@ -173,5 +229,5 @@ async function load() {
     }));
   } catch { main.textContent = 'Could not open saved clippings.'; }
 }
-window.addEventListener('focus',load);
+window.addEventListener('focus', () => load());
 await load();

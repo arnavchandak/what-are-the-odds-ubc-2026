@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "What Are the Odds",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Find and chart Gemini or Polymarket odds for the article you are reading.",
   "permissions": [
     "activeTab",

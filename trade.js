@@ -6,8 +6,8 @@ export function tradeTicket(panel, marketKey, item, price, series, openTrade, cl
   panel.hidden = false;
   panel.innerHTML = `
     <div class="ticket-head"><label>Outcome <select></select></label><button class="text-button" aria-label="Close ticket">×</button></div>
-    <div class="ticket-sides"><button class="side yes"></button><button class="side no"></button></div>
     <div class="ticket-actions" role="group" aria-label="Order type"><button aria-pressed="true">Buy</button><button aria-pressed="false">Sell</button></div>
+    <div class="ticket-sides" role="group" aria-label="Position side"><button class="side yes"></button><button class="side no"></button></div>
     <label class="ticket-amount">Amount (USD)<span>$ <input aria-label="Amount in dollars" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></span></label>
     <button class="place-order" data-action="Buy">Place buy</button>
     <div class="ticket-balance"><span>Cash balance</span><strong>—</strong></div>
@@ -25,11 +25,14 @@ export function tradeTicket(panel, marketKey, item, price, series, openTrade, cl
   const positionLine = find('.position-line');
   const select = find('select');
   series.forEach((outcome,index) => select.add(new Option(outcome.label,String(index),false,outcome === item)));
+  select.closest('label').hidden = series.length === 1;
   select.onchange = () => {
     openTrade(series[select.selectedIndex]);
     panel.querySelector('select').focus();
   };
-  find('.text-button').onclick = closeTrade;
+  const close = find('.ticket-head .text-button');
+  close.hidden = !closeTrade;
+  close.onclick = closeTrade;
   const yes = Math.round(price * 10000);
   const quoted = Number.isFinite(price) && yes > 0 && yes < 10000;
   let side = 0;

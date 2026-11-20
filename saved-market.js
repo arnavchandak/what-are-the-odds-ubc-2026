@@ -23,7 +23,7 @@ export function marketIdentity(market) {
 export function savedMarket(market, at, points, period = DEFAULT_RANGE, selected = market.outcomes) {
   return {
     key:marketIdentity(market), title:market.title, at, period, venue:market.venue,
-    source:market.source, terms:market.termsUrl, rules:market.rules,
+    source:market.source, marketUrl:market.marketUrl, terms:market.termsUrl, rules:market.rules,
     lines:selected.map((item, index) => ({
       historyId:item.historyId, label:item.label, color:item.color || seriesColors[index],
       price:item.quote ?? item.quotes?.last ?? item.quotes?.price,
@@ -51,22 +51,48 @@ async function exchangeMarket(key, request) {
   const events = Array.isArray(data) ? data : [data];
   const groups = venue === 'Polymarket' ? polymarketGroups(events) : geminiGroups(events);
   const market = groups.find(m => marketIdentity(m) === key);
-  if (market) {
-    const price = item => item.quotes.last ?? item.quotes.price ?? 0;
-    market.outcomes = market.outcomes.sort((a,b) => price(b) - price(a)).slice(0,5);
-  }
   return market;
+}
+
+async function cachedMarkets(key, storage) {
+  if (!storage) return [];
+  const keys = await storage.getKeys();
+  const entries = await storage.get(keys.filter(k => k.startsWith(CACHE_PREFIX)));
+  return Object.values(entries).sort((a,b) => b.fetchedAt - a.fetchedAt).flatMap(entry => {
+    const market = entry.markets?.find(m => marketIdentity(m) === key);
+    return market ? [{entry,market}] : [];
+  });
+}
+
+export async function recoverMarketMetadata(snapshot, storage = globalThis.chrome?.storage?.local, request = fetch) {
+  const { key } = snapshot;
+  const candidates = (await cachedMarkets(key,storage).catch(() => [])).map(({market}) => market);
+  const needsLink = !snapshot.marketUrl && (snapshot.venue === 'Gemini' || !snapshot.source);
+  const needsIds = snapshot.lines.some(line => !line.historyId && !candidates.some(market =>
+    [...market.outcomes,...(market.otherOutcomes || [])].some(item => item.label === line.label && item.historyId)));
+  if (needsIds || (needsLink && !candidates.some(market => market.marketUrl || market.venue === 'Polymarket'))) {
+    const result = await exchangeMarket(key,request).catch(() => null);
+    if (result) candidates.unshift(result);
+  }
+  if (!candidates.length) return snapshot;
+  const outcomes = candidates.flatMap(market => [...market.outcomes,...(market.otherOutcomes || [])]);
+  return {
+    ...snapshot,
+    source:snapshot.source || candidates.find(market => market.source)?.source,
+    marketUrl:snapshot.marketUrl || candidates.find(market => market.marketUrl)?.marketUrl,
+    lines:snapshot.lines.map(line => {
+      if (line.historyId) return line;
+      const ids = new Set(outcomes.filter(item => item.label === line.label && item.historyId).map(item => item.historyId));
+      return ids.size === 1 ? {...line,historyId:[...ids][0]} : line;
+    }),
+  };
 }
 
 export async function recoverMarket(clips, storage = globalThis.chrome?.storage?.local, request = fetch) {
   if (!storage) return;
   const { key } = clips[0].market;
-  const keys = await storage.getKeys();
-  const entries = await storage.get(keys.filter(k => k.startsWith(CACHE_PREFIX)));
   let cached;
-  for (const entry of Object.values(entries).sort((a,b) => b.fetchedAt - a.fetchedAt)) {
-    const market = entry.markets?.find(m => marketIdentity(m) === key);
-    if (!market) continue;
+  for (const { entry, market } of await cachedMarkets(key,storage)) {
     const snapshot = savedMarket(market,entry.fetchedAt,entry.histories);
     if (hasChart(snapshot)) return snapshot;
     cached ??= market;
@@ -78,9 +104,13 @@ export async function recoverMarket(clips, storage = globalThis.chrome?.storage?
   }) || await exchangeMarket(key,request);
   if (!market) return;
   const period = previous?.period || DEFAULT_RANGE;
+  const price = item => item.quotes.last ?? item.quotes.price ?? 0;
+  const outcomes = market.outcomes.length > 5
+    ? [...market.outcomes].sort((a,b) => price(b) - price(a)).slice(0,5)
+    : market.outcomes;
   const at = Date.now();
-  const points = await loadHistories([market],{period,request,now:at});
-  const snapshot = savedMarket(market,at,points,period);
+  const points = await loadHistories([{...market,outcomes}],{period,request,now:at});
+  const snapshot = savedMarket(market,at,points,period,outcomes);
   for (const line of snapshot.lines) line.price = line.points.at(-1)?.[1];
   return hasChart(snapshot) ? snapshot : undefined;
 }

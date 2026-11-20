@@ -149,11 +149,11 @@ a { color: #145041; }
 .position-line { margin-top:5px; color:#285843; font-size:12px; font-variant-numeric:tabular-nums; }
 
 /* Popup layout and controls. */
-body > header { background:#24383b; color:#fff4e8; border-bottom:3px solid #e49379; padding:13px 14px; gap:4px; }
-body > header .library-link,body > header button.text-button { color:#ffe0ca; font-size:11px; padding:4px; }
-body > header button.text-button:hover:not(:disabled) { background:#375255; }
-button.range-button[aria-pressed=true] { background:#ffe1c8; color:#682f14; }
-button.context-button,a { color:#773814; }
+body > header { background:#222731; color:#edf1f8; border-bottom:2px solid #526389; padding:13px 14px; gap:4px; }
+body > header .library-link,body > header button.text-button { color:#c3d4f5; font-size:11px; padding:4px; }
+body > header button.text-button:hover:not(:disabled) { background:#323b4c; }
+button.range-button[aria-pressed=true] { background:#dde6f9; color:#314565; }
+button.context-button,a { color:#364f7c; }
 .trade-toggle { font-size:12px; padding:5px 12px; }
 .trade-ticket { margin:10px 0 0; background:#f9f3ea; border-color:#dfcfc1; }
 .ticket-head label { display:flex; align-items:center; gap:8px; min-width:0; margin:0; flex:1; }
@@ -167,18 +167,18 @@ button.context-button,a { color:#773814; }
   @keyframes ticket-in { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
 }
 
-/* Slate teal and sandstone from the reference palette. */
-:root { background:#f4eee5; color:#222b2a; }
+/* Cool gray popup surfaces. */
+:root { background:#eff1f5; color:#232a35; }
 body > header h1 { font:750 18px/1.1 system-ui,sans-serif; letter-spacing:-.035em; }
-.market { background:#fffaf3; border-color:#dccabd; }
+.market { background:#fcfdff; border-color:#d9dde6; }
 .market h2 { font:700 16px/1.3 system-ui,sans-serif; letter-spacing:-.02em; }
-.market-plot { background:#f3efe8; }
-.context-heading { background:#fffaf3; border-bottom:1px solid #ded1c5; }
+.market-plot { background:#eef1f6; }
+.context-heading { background:#fcfdff; border-bottom:1px solid #d9dde6; }
 .context-question { font-weight:700; margin-top:4px !important; }
 .context-content { max-height:min(58vh,330px); overflow-y:auto; padding-top:9px; scrollbar-width:thin; }
 .back-to-odds { flex:none; padding:5px 9px; font-size:11px; color:white; background:#2e5658; }
 .back-to-odds:hover:not(:disabled) { background:#234446; }
-.trade-toggle { background:#eaa186; color:#30231e; }
+.trade-toggle { background:#3a5182; color:#fff; }
 .ticket-actions { background:#eee3d8; border-radius:8px; padding:3px; }
 .ticket-actions button:first-child,.ticket-actions button:last-child { background:transparent; border-color:transparent; color:#624b42; }
 .ticket-actions button[aria-pressed=true]:first-child { background:#2e6364; color:white; }
@@ -189,3 +189,26 @@ body > header h1 { font:750 18px/1.1 system-ui,sans-serif; letter-spacing:-.035e
 .place-order[data-action="Sell"] { background:#944a43; }
 .place-order[data-action="Sell"]:hover:not(:disabled) { background:#7d3a35; }
 .last-action { padding-top:7px; border-top:1px solid #dfcfc1; color:#53423b; }
+
+/* Shared with the library so order states read the same in either view. */
+.trade-ticket { color-scheme:dark; color:#edf1f8; background:#20242c; border-color:#393e49; }
+.trade-ticket .ticket-head .text-button { color:#bdc5d2; }
+.trade-ticket .ticket-head .text-button:hover:not(:disabled) { background:#303641; }
+.ticket-head select { background:#292e38; border-color:#4b5260; }
+.ticket-actions { background:#171a21; margin:0 0 8px; }
+.ticket-actions button:first-child,.ticket-actions button:last-child { color:#b9c2d1; }
+.ticket-actions button[aria-pressed=true]:first-child { background:#37496b; color:#fff; }
+.ticket-actions button[aria-pressed=true]:last-child { background:#674356; color:#fff; }
+.ticket-actions button[aria-pressed=false]:hover:not(:disabled) { background:#313643; color:#fff; }
+.ticket-sides .yes { background:#263a34; color:#99e0bb; }
+.ticket-sides .no { background:#412d37; color:#ffb2bb; }
+.ticket-sides .yes[aria-pressed=true] { background:#236b50; color:#fff; }
+.ticket-sides .no[aria-pressed=true] { background:#8f3f52; color:#fff; }
+.ticket-amount span { background:#171a21; border-color:#4a5261; }
+.ticket-amount span:focus-within { border-color:#90ace3; box-shadow:0 0 0 1px #90ace3; }
+.ticket-amount input { background:transparent; color:inherit; }
+.place-order { background:#4565c4; color:white; }
+.place-order:hover:not(:disabled) { background:#3959ae; }
+.place-order[data-action="Sell"] { background:#8a4661; }
+.place-order[data-action="Sell"]:hover:not(:disabled) { background:#773b53; }
+.position-line,.last-action { color:#c1cbdc; border-color:#434958; }

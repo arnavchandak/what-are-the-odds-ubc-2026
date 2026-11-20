@@ -132,6 +132,8 @@ export function geminiGroups(events, now = Date.now()) {
         )?.termsAndConditionsUrl : null),
         eventDate: event.startTime || event.effectiveDate || root.startTime || null,
         source: eventSource(event.ticker),
+        marketUrl: event.slug && 'https://www.gemini.com/predictions/'
+          + encodeURIComponent(event.ticker) + '/' + encodeURIComponent(event.slug),
         outcomes,
       });
     }

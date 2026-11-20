@@ -15,7 +15,7 @@ What Are the Odds is a Chrome extension that finds prediction markets related to
 
 - **Discovery.** The Gemini event API supplies event titles, contract labels and symbols, quotes, and available terms links. Gemini wins when both venues have matches at the same relevance level. Additional coverage comes from Polymarket when its matches are closer or Gemini has none.
 - **Price history.** Instrument symbols drive 24-hour, seven-day, and 30-day candle requests. Charts show exchange observations, with venue attribution in the Info Library’s Sources.
-- **Simulated positions.** The ticket uses reference prices and a local cash balance. All fills are simulated in the browser.
+- **Simulated positions.** The ticket uses reference prices and a local cash balance. The Info Library ticket shares the popup account and uses the prices in its saved chart snapshot. All fills are simulated in the browser.
 
 [Gemini event API](https://developer.gemini.com/rest-api/prediction-markets/events/list-events) · [Gemini candles API](https://developer.gemini.com/trading/rest-api/market-data/list-candles) · [Gemini verification notes](docs/GEMINI_VERIFICATION.md)
 

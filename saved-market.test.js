@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { recoverMarket, marketIdentity, CACHE_PREFIX } from './saved-market.js';
+import { recoverMarket, recoverMarketMetadata, marketIdentity, CACHE_PREFIX } from './saved-market.js';
 
 const market = { venue:'Polymarket', group:'meeting-place', title:'Where will the meeting take place?',
   outcomes:[{label:'Lisbon',historyId:'123',quotes:{price:0.45}}] };
@@ -30,4 +30,14 @@ test('reconstructs a missing chart from the provider event ID and outcome histor
   const recovered = await recoverMarket([clip],{getKeys:async()=>[],get:async()=>({})},request);
   assert.equal(recovered.key,clip.market.key);
   assert.deepEqual(recovered.lines[0].points,points);
+});
+
+test('adds missing identifiers to older clips using exact labels without replacing their chart',async () => {
+  const key = CACHE_PREFIX+'https://example.org/story';
+  const snapshot = {...clip.market,lines:[{label:'Lisbon',points,price:0.41}]};
+  const cached = {...market,source:'https://polymarket.com/event/meeting-place'};
+  const storage = {getKeys:async()=>[key],get:async()=>({[key]:{fetchedAt:now,markets:[cached]}})};
+  const recovered = await recoverMarketMetadata(snapshot,storage,()=>assert.fail('unexpected request'));
+  assert.equal(recovered.source,cached.source);
+  assert.deepEqual(recovered.lines,[{label:'Lisbon',historyId:'123',points,price:0.41}]);
 });
