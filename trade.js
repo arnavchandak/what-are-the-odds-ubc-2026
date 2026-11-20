@@ -2,10 +2,10 @@ import { demoAccount } from './workspace.js';
 
 const money = new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' });
 
-export function tradeTicket(panel, marketKey, item, price, marketTitle) {
+export function tradeTicket(panel, marketKey, item, price, series, openTrade, closeTrade) {
   panel.hidden = false;
   panel.innerHTML = `
-    <div class="ticket-head"><strong></strong><button class="text-button" aria-label="Close ticket">×</button></div>
+    <div class="ticket-head"><label>Outcome <select></select></label><button class="text-button" aria-label="Close ticket">×</button></div>
     <div class="ticket-sides"><button class="side yes"></button><button class="side no"></button></div>
     <label class="ticket-amount">Amount (USD)<span>$ <input aria-label="Amount in dollars" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></span></label>
     <div class="ticket-actions"><button>Buy</button><button>Sell</button></div>
@@ -19,8 +19,13 @@ export function tradeTicket(panel, marketKey, item, price, marketTitle) {
   const input = find('input');
   const feedback = find('small');
   const positionLine = find('.position-line');
-  find('strong').textContent = /^(yes|no)$/i.test(item.label) ? marketTitle : item.label;
-  find('.text-button').onclick = () => { panel.hidden = true; panel.replaceChildren(); };
+  const select = find('select');
+  series.forEach((outcome,index) => select.add(new Option(outcome.label,String(index),false,outcome === item)));
+  select.onchange = () => {
+    openTrade(series[select.selectedIndex]);
+    panel.querySelector('select').focus();
+  };
+  find('.text-button').onclick = closeTrade;
   const yes = Math.round(price * 10000);
   const quoted = Number.isFinite(price) && yes > 0 && yes < 10000;
   let side = 0;
@@ -40,6 +45,7 @@ export function tradeTicket(panel, marketKey, item, price, marketTitle) {
       button.disabled = busy;
     });
     input.disabled = busy;
+    select.disabled = busy;
     const shares = account?.positions[position()] || 0;
     positionLine.hidden = !shares;
     if (shares) {

@@ -28,7 +28,7 @@ The submission deadline is **Friday, November 20 at noon CST**. Finals are in pe
 
 **Project name**
 
-Headline Odds
+What Are the Odds
 
 **Short description**
 
@@ -36,11 +36,11 @@ Prediction market context for the article you are reading, with price history, t
 
 **What did you build?**
 
-Headline Odds is a Chrome extension that surfaces prediction markets relevant to a news article. Each card brings the matching market, history, latest quotes and its settlement context into the popup.
+What Are the Odds is a Chrome extension that surfaces prediction markets relevant to a news article. Each card brings the matching market, history, latest quotes and its settlement context into the popup.
 
 **What problem does it solve?**
 
-Readers have to switch tabs and search across exchanges to see whether there is a market for a story. Even a market with a similar title can answer a different question. Headline Odds brings the quoted event and its settlement rules into the reading flow.
+Readers have to switch tabs and search across exchanges to see whether there is a market for a story. Even a market with a similar title can answer a different question. What Are the Odds brings the quoted event and its settlement rules into the reading flow.
 
 **How does it work?**
 

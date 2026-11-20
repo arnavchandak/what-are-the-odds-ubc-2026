@@ -3,7 +3,7 @@ const date = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric'
 const shortDateTime = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric' });
 const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 
-export const seriesColors = ['#176d56', '#345eb0', '#a85d1b', '#7851a5', '#b43d62'];
+export const seriesColors = ['#b94a13', '#375a91', '#176b60', '#815293', '#ad3e60'];
 
 export function formatOdds(value) {
   if (value == null) return '—';

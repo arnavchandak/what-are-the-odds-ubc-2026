@@ -24,4 +24,4 @@ const server = createServer(async (request, response) => {
     response.writeHead(404).end();
   }
 });
-server.listen(port, '127.0.0.1', () => console.log(`Headline Odds judge preview: http://127.0.0.1:${port}/`));
+server.listen(port, '127.0.0.1', () => console.log(`What Are the Odds judge preview: http://127.0.0.1:${port}/`));

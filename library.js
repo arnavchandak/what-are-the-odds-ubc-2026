@@ -35,7 +35,7 @@ function chart(market) {
     box.append(make('small','No chart saved with this clipping.'));
     return box;
   }
-  box.append(make('small',market.venue + ' · ' + market.period + ' · Snapshot ' + dates.format(market.at)));
+  box.append(make('small',market.period + ' · Snapshot ' + dates.format(market.at)));
   const legend = make('div','','legend');
   for (const line of market.lines) {
     const label = make('span',line.label + ' ' + formatOdds(line.price ?? line.points.at(-1)?.[1]));
@@ -116,6 +116,11 @@ function detail(market,clips) {
     const row = make('li');
     row.id = 'source-' + id;
     row.append(link(article || url,url));
+    sourceList.append(row);
+  }
+  if (market.source) {
+    const row = make('li');
+    row.append(link('Market data · ' + market.venue,market.source));
     sourceList.append(row);
   }
   summary.append(make('h2','Sources'),sourceList);

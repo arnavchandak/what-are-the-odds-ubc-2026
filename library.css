@@ -7,7 +7,7 @@ h2 { font-size:18px; margin:0 0 12px; }
 .market-tile { display:flex; flex-direction:column; gap:12px; color:inherit; text-decoration:none; }
 .market-tile:hover { border-color:#709684; }
 .market-tile h2 { margin:0; }
-.snapshot { max-width:490px; }
+.snapshot { width:100%; }
 .snapshot small,.meta { color:#52675a; font-size:12px; }
 .legend { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:12px; margin:6px 0; }
 .legend span::before { content:''; display:inline-block; width:7px; height:7px; margin-right:5px; border-radius:50%; background:var(--line); }
@@ -20,3 +20,21 @@ img { display:block; max-width:100%; max-height:380px; margin:8px 0; }
 details { margin:10px 0; }
 summary { cursor:pointer; font-weight:600; }
 .clip { margin-top:12px; padding-top:10px; border-top:1px solid #d9e1dd; }
+main { max-width:1080px; }
+header { color:#8a411e; border-color:#d8cfc1; font-weight:650; }
+.masthead { isolation:isolate; overflow:hidden; position:relative; border-radius:14px; margin:18px 0 24px; padding:clamp(22px,4vw,44px); background:#161411; color:#fff6e8; }
+.masthead h1 { position:relative; margin:0; max-width:85%; font:500 clamp(30px,4.2vw,56px)/1.06 Georgia,serif; letter-spacing:-.045em; text-wrap:balance; }
+.terrain { z-index:-1; position:absolute; right:-4%; bottom:-3%; width:65%; height:100%; margin:0; opacity:.82; mask-image:linear-gradient(90deg,transparent,#000 65%); }
+.market-tile,.brief,.evidence,#clips > .snapshot { box-sizing:border-box; border-radius:12px; padding:clamp(16px,2.4vw,26px); border:1px solid #d9d0c3; background:#fffdf8; }
+.market-tile { border-top:3px solid #c3652e; }
+.market-tile:hover { border-color:#c3652e; }
+.market-tile h2,.brief h2,.evidence h2 { font:600 23px/1.15 Georgia,serif; letter-spacing:-.025em; color:#201b16; }
+#clips > .snapshot { width:100%; }
+.brief h2:not(:first-child) { border-top:1px solid #e4d9cc; padding-top:16px; }
+.market-tile .meta,.snapshot small,.meta { color:#695d50; }
+@media(prefers-reduced-motion:no-preference) {
+  .terrain { animation:drift 13s ease-in-out infinite alternate; }
+  @keyframes drift { to { transform:translate(-3%,4%) scale(1.04); } }
+  .market-tile { transition:transform .18s ease-out,border-color .18s; }
+  .market-tile:hover { transform:translateY(-3px); }
+}

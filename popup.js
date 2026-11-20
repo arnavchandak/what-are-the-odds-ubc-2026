@@ -88,10 +88,7 @@ function updateChart(slot) {
     const button = element('button', '', 'legend-button');
     button.title = 'Trade · ' + label;
     button.append(name, odds);
-    button.onclick = () => {
-      slot.tradeItem = item;
-      tradeTicket(slot.ticket, slot.marketKey, item, price, slot.marketTitle);
-    };
+    button.onclick = () => slot.openTrade(item);
     row.append(button);
     return row;
   }));
@@ -101,7 +98,6 @@ function updateChart(slot) {
   else if (waiting && !hasLine) chart.textContent = 'Loading price history…';
   else renderChart(chart, lines, period);
 
-  if (!selected.includes(slot.tradeItem)) slot.ticket.hidden = true;
   slot.latest.hidden = !selected.length;
   chart.setAttribute('aria-busy', String(waiting));
 }
@@ -254,7 +250,34 @@ function renderMarket(market, histories, fetchedAt) {
   contextButton.setAttribute('aria-controls', back.id);
   contextButton.setAttribute('aria-expanded', 'false');
   const source = link('View source ↗', market.source);
-  footer.append(contextButton);
+  const trade = element('button','Trade','trade-toggle');
+  ticket.id = 'trade-' + market.id;
+  trade.setAttribute('aria-controls',ticket.id);
+  trade.setAttribute('aria-expanded','false');
+  const closeTrade = () => {
+    ticket.hidden = true;
+    trade.setAttribute('aria-expanded','false');
+    trade.focus({preventScroll:true});
+  };
+  slot.openTrade = item => {
+    for (const other of chartSlots.values()) {
+      if (other !== slot && !other.ticket.hidden) {
+        other.ticket.hidden = true;
+        other.tradeButton.setAttribute('aria-expanded','false');
+      }
+    }
+    slot.tradeItem = item;
+    const price = item.quote ?? rangeData(slot, DEFAULT_RANGE).points[item.key]?.at(-1)?.[1];
+    tradeTicket(ticket, marketKey, item, price, series, slot.openTrade, closeTrade);
+    trade.setAttribute('aria-expanded','true');
+  };
+  trade.onclick = () => {
+    if (ticket.hidden) slot.openTrade(slot.tradeItem || series.find(item => item.selected) || series[0]);
+    else closeTrade();
+  };
+  slot.tradeButton = trade;
+  trade.disabled = !series.length;
+  footer.append(trade,contextButton);
   const clip = element('button', 'Clip from page', 'context-button');
   clip.onclick = async () => {
     try {
@@ -271,7 +294,7 @@ function renderMarket(market, histories, fetchedAt) {
   };
   footer.append(clip);
   if (source) footer.append(source);
-  front.append(controls, plot, ticket, footer);
+  front.append(controls, plot, footer, ticket);
   contexts.bind({ card, front, back, contextButton, backButton, prepareContext: () => {
     if (!back.childElementCount) renderContext(market, back, backButton, source);
   } });
