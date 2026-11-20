@@ -2,7 +2,7 @@
 
 What probability are traders putting on the outcome in this article? Open the Chrome extension on a news story to see a matching prediction market, its price history, and the terms that determine the outcome. Clip a passage or image to keep the article evidence alongside the market in your Info Library.
 
-**[Try the extension](#run-the-extension)** · **[Verify both integrations without API keys](#verify-the-build)** · **[Explore the architecture](#architecture)**
+**[Watch the demo on YouTube](https://youtu.be/fDYKdH2Ya20)** · **[Try the extension](#run-the-extension)** · **[Verify both integrations without API keys](#verify-the-build)** · **[Explore the architecture](#architecture)**
 
 ## UBC 2026 judging guide
 
