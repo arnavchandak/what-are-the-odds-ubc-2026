@@ -1,3 +1,4 @@
+import { CACHE_PREFIX, articleKey } from './saved-market.js';
 import { storePageClip } from './clip-storage.js';
 import { readArticle } from './article.js';
 import { DEFAULT_RANGE, MAX_PLOTTED, RANGES } from './chart-ranges.js';
@@ -7,7 +8,6 @@ import { lookupFingerprint, lookupMarkets } from './lookup.js';
 import { additionalOutcomes } from './outcomes.js';
 
 const KEY = 'anthropicApiKey';
-const CACHE_PREFIX = 'headline-odds:lookup:';
 const CACHE_VERSION = 6;
 const TTL_MS = 10 * 60 * 1000;
 const LOOKUP_LIMIT = 40;
@@ -24,16 +24,6 @@ function share(jobs, id, run) {
     void job.then(({ saved }) => saved).catch(() => {}).finally(() => jobs.delete(id));
   }
   return jobs.get(id);
-}
-
-function articleKey(address) {
-  const url = new URL(address);
-  if (!['https:', 'http:'].includes(url.protocol)) throw new Error('Open a web article to see matching markets.');
-  if (!/^#(?:!|\/)/.test(url.hash)) url.hash = '';
-  for (const param of [...url.searchParams.keys()]) {
-    if (/^utm_/i.test(param) || ['fbclid', 'gclid'].includes(param)) url.searchParams.delete(param);
-  }
-  return CACHE_PREFIX + url.href;
 }
 
 async function cacheEntry(id, entry) {

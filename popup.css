@@ -147,3 +147,4 @@ button.context-button { color: #145041; }
 a { color: #145041; }
 .rules-dialog { max-width:90vw; max-height:80vh; border:1px solid #b8c8bd; border-radius:8px; color:inherit; }
 .rules-dialog::backdrop { background:#14271e55; }
+.position-line { margin-top:5px; color:#285843; font-size:12px; font-variant-numeric:tabular-nums; }

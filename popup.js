@@ -1,3 +1,4 @@
+import { marketIdentity, savedMarket } from './saved-market.js';
 import { pickClip } from './capture.js';
 import { tradeTicket } from './trade.js';
 import { formatOdds, renderChart, seriesColors } from './chart.js';
@@ -166,7 +167,7 @@ function renderContext(market, back, backButton, source) {
   back.append(header, body);
 }
 
-function renderMarket(market, histories) {
+function renderMarket(market, histories, fetchedAt) {
   const card = element('article', '', 'market');
   const front = element('div', '', 'market-front');
   const back = element('section', '', 'market-back');
@@ -183,7 +184,7 @@ function renderMarket(market, histories) {
   plot.append(latest, chart);
   const ticket = element('section', '', 'trade-ticket');
   ticket.hidden = true;
-  const marketKey = JSON.stringify([market.venue, market.group || market.source || market.title]);
+  const marketKey = marketIdentity(market);
   const series = [...market.outcomes, ...additionalOutcomes(market)].map((outcome, index) => ({
     key: historyKey(market.venue, outcome),
     historyId: outcome.historyId,
@@ -259,7 +260,7 @@ function renderMarket(market, histories) {
     try {
       const [tab] = await chrome.tabs.query({ active:true, currentWindow:true });
       if (tab?.id !== articleTab?.id || tab?.url?.split('#')[0] !== articleTab?.url?.split('#')[0]) throw Error('Tab changed');
-      await chrome.scripting.executeScript({ target:{ tabId:tab.id }, func:pickClip, args:[{key:marketKey,title:market.title}] });
+      await chrome.scripting.executeScript({ target:{ tabId:tab.id }, func:pickClip, args:[savedMarket(market, fetchedAt, rangeData(slot,slot.period).points, slot.period, series.filter(item => item.selected))] });
       if (location.protocol === 'chrome-extension:') window.close();
     } catch (error) {
       clip.textContent = 'Retry clip';
@@ -281,7 +282,7 @@ function renderMarket(market, histories) {
 function renderResults(entry) {
   contexts.close();
   chartSlots.clear();
-  results.replaceChildren(...entry.markets.map((market) => renderMarket(market, entry.histories)));
+  results.replaceChildren(...entry.markets.map((market) => renderMarket(market, entry.histories, entry.fetchedAt)));
   const statusText = entry.markets.length
     ? `Updated at ${asOfFormat.format(entry.fetchedAt)}`
     : 'No close market match for this article.';

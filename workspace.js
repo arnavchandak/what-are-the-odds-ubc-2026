@@ -49,6 +49,14 @@ export function demoAccount(order) {
           const debit = action === 'Buy' ? amount : -amount;
           account.cash -= debit;
           account.positions[position] = Math.max(0, holding + debit / price);
+          account.averageEntry ??= {};
+          if (account.positions[position] < 1e-9) {
+            account.positions[position] = 0;
+            delete account.averageEntry[position];
+          } else if (action === 'Buy' && (!holding || Number.isFinite(account.averageEntry[position]))) {
+            const priorCost = holding * (account.averageEntry[position] || 0);
+            account.averageEntry[position] = (priorCost + amount) / account.positions[position];
+          }
           store.put(account, 'paper');
         }
         done(account);

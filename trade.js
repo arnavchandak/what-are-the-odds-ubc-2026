@@ -10,6 +10,7 @@ export function tradeTicket(panel, marketKey, item, price, marketTitle) {
     <label class="ticket-amount">Amount (USD)<span>$ <input aria-label="Amount in dollars" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></span></label>
     <div class="ticket-actions"><button>Buy</button><button>Sell</button></div>
     <div class="ticket-balance"><span>Cash balance</span><strong>—</strong></div>
+    <div class="position-line" hidden></div>
     <small role="status"></small>`;
   const find = selector => panel.querySelector(selector);
   const sides = [...panel.querySelectorAll('.side')];
@@ -17,11 +18,13 @@ export function tradeTicket(panel, marketKey, item, price, marketTitle) {
   const balance = find('.ticket-balance strong');
   const input = find('input');
   const feedback = find('small');
+  const positionLine = find('.position-line');
   find('strong').textContent = /^(yes|no)$/i.test(item.label) ? marketTitle : item.label;
   find('.text-button').onclick = () => { panel.hidden = true; panel.replaceChildren(); };
   const yes = Math.round(price * 10000);
   const quoted = Number.isFinite(price) && yes > 0 && yes < 10000;
   let side = 0;
+  let sideChosen = false;
   let account;
   let busy = false;
   const unitPrice = () => side ? 10000 - yes : yes;
@@ -37,11 +40,19 @@ export function tradeTicket(panel, marketKey, item, price, marketTitle) {
       button.disabled = busy;
     });
     input.disabled = busy;
+    const shares = account?.positions[position()] || 0;
+    positionLine.hidden = !shares;
+    if (shares) {
+      const entry = account.averageEntry?.[position()];
+      const value = quoted ? money.format(shares * unitPrice() / 10000) : 'Value unavailable';
+      const average = Number.isFinite(entry) ? ' · Avg entry ' + Number((entry / 100).toFixed(2)) + '¢' : '';
+      positionLine.textContent = sideName(side) + ' position ' + value + average;
+    }
     if (account) balance.textContent = money.format(account.cash / 10000);
   }
   sides.forEach((button, index) => {
     button.textContent = sideName(index) + (quoted ? '  ' + (index ? 10000 - yes : yes) / 100 + '¢' : '');
-    button.onclick = () => { side = index; feedback.textContent = ''; update(); };
+    button.onclick = () => { sideChosen = true; side = index; feedback.textContent = ''; update(); };
   });
   async function submit(action) {
     const amountCents = Math.round(input.valueAsNumber * 100);
@@ -59,6 +70,13 @@ export function tradeTicket(panel, marketKey, item, price, marketTitle) {
   input.oninput = () => { feedback.textContent = ''; update(); };
   if (!quoted) feedback.textContent = 'Trading unavailable at this price.';
   update();
-  demoAccount().then(result => { account = result; update(); })
+  demoAccount().then(result => {
+    account = result;
+    if (!sideChosen && !account.positions[position()]) {
+      side = 1;
+      if (!account.positions[position()]) side = 0;
+    }
+    update();
+  })
     .catch(() => { feedback.textContent = 'Could not load your cash balance.'; });
 }

@@ -48,7 +48,7 @@ export function renderChart(element, series, period) {
     `${label}: ${formatOdds(points[0][1])} to ${formatOdds(points.at(-1)[1])}`).join('. ')}`);
   const ctx = canvas.getContext('2d');
   const left = 7;
-  const right = canvas.width - 68;
+  const right = canvas.width - 84;
   const high = 18;
   const low = canvas.height - 19;
   const x = (timestamp) => left + ((timestamp - firstTime) / (lastTime - firstTime)) * (right - left);
@@ -62,7 +62,7 @@ export function renderChart(element, series, period) {
   ctx.setLineDash([4, 5]);
   for (const level of ticks) {
     const row = y(level);
-    ctx.fillText(formatOdds(level), right + 9, row);
+    ctx.fillText(formatOdds(level), right + 24, row);
     ctx.beginPath();
     ctx.moveTo(left, row);
     ctx.lineTo(right, row);
