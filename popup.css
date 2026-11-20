@@ -76,16 +76,22 @@ button.legend-button:hover { background:#e4ece6; }
 .series-marker { width:7px; height:7px; background:var(--series-color); border-radius:50%; }
 .outcome-odds { font-variant-numeric:tabular-nums; }
 .library-link { align-self:center; font-size:12px; font-weight:650; margin-right:4px; }
-.trade-ticket { background:#f1f5f2; padding:8px; border-radius:6px; margin-bottom:8px; font-size:12px; }
-.trade-line { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px; }
-.trade-line button { padding:4px 8px; margin-left:4px; font-size:12px; }
-.trade-line label { margin:0; }
-.trade-line input { width:65px; padding:3px; }
-.trade-ticket small { display:block; }
-button.side.no { background:#982e41; }
-button.side.yes { background:#176749; }
-button.side[aria-pressed=false] { opacity:.64; }
-button.side[aria-pressed=true] { outline:2px solid #26392f; outline-offset:1px; }
+.trade-ticket { margin:8px 0; padding:12px; background:#f5f8f6; border:1px solid #dae4dd; border-radius:8px; font-size:12px; }
+.ticket-head,.ticket-balance,.ticket-amount { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.ticket-head { margin-bottom:8px; }
+.ticket-sides,.ticket-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.trade-ticket button { padding:6px 10px; }
+.ticket-sides .yes { color:#125139; background:#e3efe8; }
+.ticket-sides .no { color:#982d40; background:#f6e8eb; }
+.ticket-sides .yes[aria-pressed=true] { color:white; background:#196444; }
+.ticket-sides .no[aria-pressed=true] { color:white; background:#973148; }
+.ticket-sides button:hover { box-shadow:inset 0 0 0 1px currentColor; }
+.ticket-amount { margin:10px 0; }
+.ticket-amount span { display:flex; align-items:center; padding:4px 8px; border:1px solid #a9bcb1; border-radius:5px; background:white; }
+.ticket-amount input { padding:2px 4px; border:0; width:90px; text-align:right; }
+.ticket-actions button:last-child { background:white; color:#244337; border-color:#b9c8be; }
+.ticket-balance { margin-top:10px; font-variant-numeric:tabular-nums; }
+.trade-ticket small:not(:empty) { display:block; margin-top:5px; }
 .chart-axis { display: flex; justify-content: space-between; gap: 4px; font-variant-numeric: tabular-nums; }
 .extension-popup .chart-axis span { white-space: nowrap; }
 .market footer, .context-heading {
@@ -139,3 +145,5 @@ button.context-button { color: #145041; }
 .market-rules { white-space: pre-wrap; }
 .context-links { display: flex; flex-wrap: wrap; gap: 5px 12px; font-size: 11px; }
 a { color: #145041; }
+.rules-dialog { max-width:90vw; max-height:80vh; border:1px solid #b8c8bd; border-radius:8px; color:inherit; }
+.rules-dialog::backdrop { background:#14271e55; }

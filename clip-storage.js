@@ -1,14 +1,14 @@
 import { saveClip } from './workspace.js';
 
 export async function storePageClip(clip, sender) {
-  if (!sender.tab || sender.frameId !== 0 || sender.url !== clip.url || !/^https?:/.test(clip.url)) throw Error('Page changed.');
+  if (!sender.tab || sender.frameId !== 0 || new URL(sender.url).origin !== new URL(clip.url).origin || !/^https?:/.test(clip.url)) throw Error('Page changed.');
   const { market, article, url, kind } = clip;
   const record = { market, article, url, kind };
   if (kind === 'text' && clip.value?.trim()) record.value = clip.value;
   else if (kind === 'image') {
     const visible = async () => {
       const [tab] = await chrome.tabs.query({ active:true, windowId:sender.tab.windowId });
-      if (tab?.id !== sender.tab.id || tab.url !== url) throw Error('Tab changed.');
+      if (tab?.id !== sender.tab.id || tab.url?.split('#')[0] !== url.split('#')[0]) throw Error('Tab changed.');
     };
     await visible();
     const data = await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format:'png' });

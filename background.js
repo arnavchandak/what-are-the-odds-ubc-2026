@@ -137,8 +137,12 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, send) => {
+  if (message.type === 'open-clip-library' && sender.id === chrome.runtime.id && sender.tab && typeof message.marketKey === 'string') {
+    chrome.tabs.create({ url:chrome.runtime.getURL('library.html?market=' + encodeURIComponent(message.marketKey)) }).then(() => send(true), () => send(false));
+    return true;
+  }
   if (message.type === 'save-clip' && sender.id === chrome.runtime.id) {
-    storePageClip(message.clip, sender).then(() => send({ saved:true }), () => send({ error:'Could not save clipping.' }));
+    storePageClip(message.clip, sender).then(() => send({ saved:true }), error => send({ error:error.message || 'Could not save clipping.' }));
     return true;
   }
   if (message.type !== 'chart' || sender.id !== chrome.runtime.id) return;

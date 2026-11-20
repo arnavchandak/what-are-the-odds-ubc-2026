@@ -2,6 +2,7 @@ import { listClips } from './workspace.js';
 const select = document.querySelector('#markets');
 const section = document.querySelector('#clips');
 const make = (tag,text) => Object.assign(document.createElement(tag),{textContent:text});
+let initialMarket = new URLSearchParams(location.search).get('market');
 let clips = [], urls = [];
 function render() {
   urls.forEach(url => URL.revokeObjectURL(url));
@@ -29,7 +30,8 @@ function render() {
 async function load() {
   try {
     clips = await listClips();
-    const current = select.value;
+    const current = initialMarket || select.value;
+    initialMarket = '';
     select.length = 1;
     for (const [key,title] of new Map(clips.map(c => [c.market.key,c.market.title]))) select.add(new Option(title,key));
     select.value = current;

@@ -1,84 +1,64 @@
 import { demoAccount } from './workspace.js';
 
-export function tradeTicket(panel, marketKey, item, price) {
-  panel.replaceChildren();
+const money = new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' });
+
+export function tradeTicket(panel, marketKey, item, price, marketTitle) {
   panel.hidden = false;
-  const make = (tag, text) => Object.assign(document.createElement(tag), { textContent: text });
-  const header = make('div', '');
-  const close = make('button', '×');
-  close.type = 'button';
-  close.className = 'text-button';
-  close.setAttribute('aria-label','Close demo trade');
-  close.onclick = () => { panel.hidden = true; panel.replaceChildren(); };
-  header.className = 'trade-line';
-  header.append(make('strong', item.label), close);
-  panel.append(header);
-  const body = make('div','');
-  panel.append(body);
+  panel.innerHTML = `
+    <div class="ticket-head"><strong></strong><button class="text-button" aria-label="Close ticket">×</button></div>
+    <div class="ticket-sides"><button class="side yes"></button><button class="side no"></button></div>
+    <label class="ticket-amount">Amount (USD)<span>$ <input aria-label="Amount in dollars" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></span></label>
+    <div class="ticket-actions"><button>Buy</button><button>Sell</button></div>
+    <div class="ticket-balance"><span>Cash balance</span><strong>—</strong></div>
+    <small role="status"></small>`;
+  const find = selector => panel.querySelector(selector);
+  const sides = [...panel.querySelectorAll('.side')];
+  const [buy, sell] = panel.querySelectorAll('.ticket-actions button');
+  const balance = find('.ticket-balance strong');
+  const input = find('input');
+  const feedback = find('small');
+  find('strong').textContent = /^(yes|no)$/i.test(item.label) ? marketTitle : item.label;
+  find('.text-button').onclick = () => { panel.hidden = true; panel.replaceChildren(); };
   const yes = Math.round(price * 10000);
-  if (!Number.isFinite(price) || yes <= 0 || yes >= 10000) {
-    body.textContent = 'Demo trading needs a price between 0% and 100%.';
-    return;
-  }
-  let side = 'Yes';
+  const quoted = Number.isFinite(price) && yes > 0 && yes < 10000;
+  let side = 0;
   let account;
   let busy = false;
-  const choices = make('div','');
-  choices.className = 'trade-line';
-  choices.append(make('span','Demo trade'));
-  const controls = make('div','');
-  for (const name of ['Yes','No']) {
-    const cents = (name === 'Yes' ? yes : 10000 - yes) / 100;
-    const button = make('button', name + ' ' + cents + '¢');
-    button.className = 'side ' + name.toLowerCase();
-    button.onclick = () => { side = name; feedback.textContent = ''; update(); };
-    controls.append(button);
-  }
-  choices.append(controls);
-  const label = make('label','Shares ');
-  const qty = document.createElement('input');
-  Object.assign(qty, { type:'number', min:1, max:100000, step:1, value:'1' });
-  label.append(qty);
-  const actions = make('div','');
-  actions.className = 'trade-line';
-  actions.append(label);
-  const buttons = make('div','');
-  actions.append(buttons);
-  const position = () => JSON.stringify([marketKey,item.historyId || item.label,side]);
-  const balance = make('small','');
-  const feedback = make('small','');
-  feedback.setAttribute('role','status');
+  const unitPrice = () => side ? 10000 - yes : yes;
+  const sideName = index => index ? 'No' : 'Yes';
+  const position = () => JSON.stringify([marketKey, item.historyId || item.label, sideName(side)]);
   function update() {
-    const holding = account?.positions[position()] || 0;
-    const units = qty.valueAsNumber;
-    const unitPrice = side === 'Yes' ? yes : 10000 - yes;
-    for (const [idx,button] of [...controls.children].entries()) {
-      button.setAttribute('aria-pressed', String(side === ['Yes','No'][idx]));
+    const cents = Math.round(input.valueAsNumber * 100);
+    const valid = quoted && !busy && account && input.validity.valid && Number.isSafeInteger(cents) && cents > 0;
+    buy.disabled = !valid || cents * 100 > account.cash;
+    sell.disabled = !valid || cents * 100 > Math.floor((account.positions[position()] || 0) * unitPrice() + 1e-6);
+    sides.forEach((button, index) => {
+      button.setAttribute('aria-pressed', String(side === index));
       button.disabled = busy;
-    }
-    for (const button of buttons.children) {
-      button.disabled = busy || !account || !qty.validity.valid || !Number.isInteger(units) ||
-        (button.textContent === 'Buy' ? units * unitPrice > account.cash : units > holding);
-    }
-    if (account) balance.textContent = '$' + (account.cash / 10000).toFixed(2) + ' demo cash · ' + holding + ' ' + side + ' shares held';
+    });
+    input.disabled = busy;
+    if (account) balance.textContent = money.format(account.cash / 10000);
   }
-  for (const action of ['Buy','Sell']) {
-    const button = make('button', action);
-    button.onclick = async () => {
-      busy = true;
-      update();
-      const quantity = qty.valueAsNumber;
-      try {
-        account = await demoAccount({ position: position(), action, price: side === 'Yes' ? yes : 10000 - yes, quantity });
-        feedback.textContent = (action === 'Buy' ? 'Bought ' : 'Sold ') + quantity + ' ' + side + (quantity === 1 ? ' share.' : ' shares.');
-      } catch (error) { feedback.textContent = error.message; }
-      busy = false;
-      update();
-    };
-    buttons.append(button);
+  sides.forEach((button, index) => {
+    button.textContent = sideName(index) + (quoted ? '  ' + (index ? 10000 - yes : yes) / 100 + '¢' : '');
+    button.onclick = () => { side = index; feedback.textContent = ''; update(); };
+  });
+  async function submit(action) {
+    const amountCents = Math.round(input.valueAsNumber * 100);
+    busy = true;
+    update();
+    try {
+      account = await demoAccount({ position:position(), action, price:unitPrice(), amountCents });
+      feedback.textContent = (action === 'Buy' ? 'Bought ' : 'Sold ') + money.format(amountCents / 100) + ' of ' + sideName(side) + '.';
+    } catch (error) { feedback.textContent = error.message; }
+    busy = false;
+    update();
   }
-  qty.oninput = update;
-  body.append(choices, actions, balance, feedback);
+  buy.onclick = () => submit('Buy');
+  sell.onclick = () => submit('Sell');
+  input.oninput = () => { feedback.textContent = ''; update(); };
+  if (!quoted) feedback.textContent = 'Trading unavailable at this price.';
   update();
-  demoAccount().then(result => { account = result; update(); }).catch(() => { feedback.textContent = 'Could not open your demo account.'; });
+  demoAccount().then(result => { account = result; update(); })
+    .catch(() => { feedback.textContent = 'Could not load your cash balance.'; });
 }

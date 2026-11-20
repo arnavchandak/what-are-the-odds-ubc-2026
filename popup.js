@@ -85,11 +85,11 @@ function updateChart(slot) {
     const name = element('span', label, 'outcome-name');
     name.prepend(marker);
     const button = element('button', '', 'legend-button');
-    button.title = 'Demo trade · ' + label;
+    button.title = 'Trade · ' + label;
     button.append(name, odds);
     button.onclick = () => {
       slot.tradeItem = item;
-      tradeTicket(slot.ticket, slot.marketKey, item, price);
+      tradeTicket(slot.ticket, slot.marketKey, item, price, slot.marketTitle);
     };
     row.append(button);
     return row;
@@ -128,20 +128,31 @@ function renderContext(market, back, backButton, source) {
   const header = element('div', '', 'context-heading');
   header.append(element('h2', 'Market context'), backButton);
   const body = element('div', '', 'context-content');
-  if (market.articleConnection || market.articleQuote) {
-    body.append(element('h3', 'Why it matches'));
-    if (market.articleConnection) body.append(element('p', market.articleConnection));
-    if (market.articleQuote && market.articleQuote !== market.articleConnection) {
-      body.append(element('blockquote', `“${market.articleQuote}”`));
+  function paragraph(value, fallback) {
+    const text = typeof value === 'string' && value.trim().replace(/\s+/g, ' ');
+    if (!text) return '';
+    const sentences = [...new Intl.Segmenter('en', { granularity:'sentence' }).segment(text)];
+    let excerpt = '';
+    for (const { segment } of sentences.slice(0, 2)) {
+      if ((excerpt + segment).trim().length > 280) break;
+      excerpt += segment;
     }
+    return excerpt.trim() || fallback;
   }
-
+  const reason = paragraph(market.articleConnection || market.articleQuote, 'See the linked article for the full market connection.');
+  if (reason) body.append(element('h3', 'Why it matches'), element('p', reason));
   const rulesLink = link('Full rules ↗', market.termsUrl);
   const resolution = link('Resolution source ↗', market.resolutionSource);
-  if (market.rules || (market.resolutionSource && !resolution)) {
-    body.append(element('h3', 'Settlement'));
-    if (market.rules) body.append(element('p', market.rules, 'market-rules'));
-    if (market.resolutionSource && !resolution) body.append(element('p', market.resolutionSource));
+  const rules = paragraph(market.rules || (!resolution && market.resolutionSource), 'See the full settlement terms for this market.');
+  if (rules) body.append(element('h3', 'Settlement'), element('p', rules, 'market-rules'));
+  if (market.rules && rules !== market.rules.trim() && !rulesLink) {
+    const full = element('dialog','', 'rules-dialog');
+    const dismiss = element('button','Close');
+    dismiss.onclick = () => full.close();
+    full.append(element('h2','Full settlement terms'),element('p',market.rules,'market-rules'),dismiss);
+    const read = element('button','Read full terms','context-button');
+    read.onclick = () => full.showModal();
+    body.append(read,full);
   }
   const links = element('div', '', 'context-links');
   const seen = new Set();
@@ -181,7 +192,7 @@ function renderMarket(market, histories) {
     selected: index < market.outcomes.length,
     color: seriesColors[index],
   }));
-  const slot = { ticket, marketKey, id: market.id, venue: market.venue, chart, legend, latest, period: DEFAULT_RANGE, series, histories: new Map() };
+  const slot = { marketTitle:market.title, ticket, marketKey, id: market.id, venue: market.venue, chart, legend, latest, period: DEFAULT_RANGE, series, histories: new Map() };
   chartSlots.set(slot.id, slot);
   const initial = rangeData(slot, DEFAULT_RANGE);
   if (histories) Object.assign(initial.points, histories);
@@ -247,10 +258,15 @@ function renderMarket(market, histories) {
   clip.onclick = async () => {
     try {
       const [tab] = await chrome.tabs.query({ active:true, currentWindow:true });
-      if (tab?.id !== articleTab?.id || tab?.url !== articleTab?.url) throw Error('Tab changed');
+      if (tab?.id !== articleTab?.id || tab?.url?.split('#')[0] !== articleTab?.url?.split('#')[0]) throw Error('Tab changed');
       await chrome.scripting.executeScript({ target:{ tabId:tab.id }, func:pickClip, args:[{key:marketKey,title:market.title}] });
       if (location.protocol === 'chrome-extension:') window.close();
-    } catch { showStatus('Reopen the popup on the article to clip from it.', true); }
+    } catch (error) {
+      clip.textContent = 'Retry clip';
+      let notice = front.querySelector('.clip-error');
+      if (!notice) { notice = element('small','','clip-error'); notice.setAttribute('role','status'); footer.after(notice); }
+      notice.textContent = error.message === 'Tab changed' ? 'The article changed. Refresh markets before clipping.' : 'Chrome could not open the article picker. Check extension access to this site and retry.';
+    }
   };
   footer.append(clip);
   if (source) footer.append(source);

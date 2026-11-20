@@ -38,16 +38,17 @@ export function demoAccount(order) {
       const account = req.result || { cash: 10000000, positions: {} }; // $1,000 in hundredths of a cent
       try {
         if (order) {
-          const { position, action, price, quantity } = order;
+          const { position, action, price, amountCents } = order;
+          const amount = amountCents * 100;
           if (!Number.isInteger(price) || price <= 0 || price >= 10000 ||
-              !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100000 ||
-              !['Buy','Sell'].includes(action)) throw Error('Choose a valid price and share quantity.');
-          const delta = action === 'Buy' ? quantity : -quantity;
+              !Number.isSafeInteger(amountCents) || !Number.isSafeInteger(amount) || amount <= 0 ||
+              !['Buy','Sell'].includes(action)) throw Error('Enter a positive dollar amount in cents.');
           const holding = account.positions[position] || 0;
-          if (holding + delta < 0) throw Error('Too few shares to sell.');
-          if (account.cash < price * delta) throw Error('Insufficient demo cash.');
-          account.cash -= price * delta;
-          account.positions[position] = holding + delta;
+          if (action === 'Sell' && amount > Math.floor(holding * price + 1e-6)) throw Error('Amount exceeds the value held.');
+          if (action === 'Buy' && amount > account.cash) throw Error('Amount exceeds your cash balance.');
+          const debit = action === 'Buy' ? amount : -amount;
+          account.cash -= debit;
+          account.positions[position] = Math.max(0, holding + debit / price);
           store.put(account, 'paper');
         }
         done(account);

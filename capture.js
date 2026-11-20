@@ -1,61 +1,89 @@
-// Serialized by chrome.scripting, so the picker is self-contained.
+// Chrome serializes this function into the article's isolated world.
 export function pickClip(market, demoSave) {
   document.dispatchEvent(new Event('headline-odds-close-picker'));
   const host = document.createElement('div');
-  host.style.cssText = 'all:initial!important;position:fixed!important;bottom:16px!important;right:16px!important;z-index:2147483647!important';
-  const root = host.attachShadow({ mode:'closed' });
-  const bar = document.createElement('div');
-  bar.style.cssText = 'max-width:320px;padding:14px;background:#153d33;color:white;border-radius:10px;font:14px/1.45 system-ui;box-shadow:0 3px 18px #0004';
-  const text = document.createElement('div');
-  text.textContent = market.title + ' · Select text and press Save, or click an image.';
+  host.popover = 'manual';
+  host.style.cssText = 'position:fixed!important;inset:12px 12px auto auto!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;max-width:calc(100vw - 24px)!important;z-index:2147483647!important';
+  const root = host.attachShadow({mode:'closed'});
+  const css = document.createElement('style');
+  css.textContent = 'section{box-sizing:border-box;width:min(330px,calc(100vw - 24px));padding:14px;background:white;color:#1d3028;border:1px solid #b7c8be;border-radius:9px;box-shadow:0 4px 20px #1233;font:14px/1.4 system-ui}strong,p{display:block;margin:0 0 7px}button{padding:5px 9px;margin-right:5px;cursor:pointer;border-radius:5px;border:1px solid #acc1b4;background:white;color:#164632}button:disabled{opacity:.55}';
+  const bar = document.createElement('section');
+  const heading = document.createElement('strong');
+  heading.textContent = market.title;
+  const text = document.createElement('p');
+  text.setAttribute('role','status');
   const save = document.createElement('button');
+  const library = document.createElement('button');
   const cancel = document.createElement('button');
-  save.textContent = 'Save selection';
+  library.textContent = 'Open Info Library';
+  library.hidden = true;
+  save.textContent = 'Save text';
   cancel.textContent = 'Cancel';
-  for (const btn of [save,cancel]) btn.style.cssText = 'cursor:pointer;margin:8px 5px 0 0;padding:5px 9px';
-  bar.append(text,save,cancel);
-  root.append(bar);
+  bar.append(heading,text,save,library,cancel);
+  root.append(css,bar);
   document.documentElement.append(host);
+  host.showPopover?.();
   const controller = new AbortController();
-  const options = { capture:true, signal:controller.signal };
+  const options = {capture:true,signal:controller.signal};
   const close = () => { controller.abort(); host.remove(); };
-  document.addEventListener('headline-odds-close-picker', close, options);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); }, options);
+  document.addEventListener('headline-odds-close-picker',close,options);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); },options);
   cancel.onclick = close;
+  library.onclick = () => {
+    if (demoSave) window.open('/library.html?market=' + encodeURIComponent(market.key),'_blank','noopener');
+    else chrome.runtime.sendMessage({type:'open-clip-library',marketKey:market.key});
+    close();
+  };
   let busy = false;
+  let selection = '';
+  function readSelection() {
+    if (busy || root.activeElement) return;
+    selection = window.getSelection()?.toString().trim() || '';
+    save.disabled = !selection;
+    text.textContent = selection ? 'Selected: ' + selection.slice(0,90) + (selection.length > 90 ? '…' : '') :
+      'Highlight a passage, then choose Save text. Or click an article image to save it.';
+  }
+  readSelection();
+  document.addEventListener('selectionchange',readSelection,options);
+  save.onpointerdown = e => e.preventDefault();
+  save.onclick = () => { if (selection) submit({kind:'text',value:selection}); };
   async function submit(payload) {
     if (busy) return;
     busy = true;
-    host.style.visibility = 'hidden';
+    save.disabled = true;
     try {
-      await new Promise(requestAnimationFrame);
-      await new Promise(requestAnimationFrame);
-      const clip = { ...payload, market, url:location.href, article:document.title };
-      const result = demoSave ? await demoSave(clip) : await chrome.runtime.sendMessage({type:'save-clip',clip});
-      if (result?.error) throw Error(result.error);
-      text.textContent = 'Saved to ' + market.title + '.';
+      if (payload.kind === 'image') {
+        host.style.setProperty('visibility','hidden','important');
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+      }
+      const clip = {...payload,market,url:location.href,article:document.title};
+      if (demoSave) await demoSave(clip);
+      else {
+        const response = await chrome.runtime.sendMessage({type:'save-clip',clip});
+        if (!response?.saved) throw Error(response?.error || 'The extension disconnected. Reopen it and try again.');
+      }
+      text.textContent = payload.kind === 'image' ? 'Image saved to this market.' : 'Passage saved to this market.';
       save.hidden = true;
+      library.hidden = false;
       cancel.textContent = 'Done';
-      setTimeout(close, 1800);
-    } catch {
+    } catch (error) {
       busy = false;
-      text.textContent = 'Could not save. Keep this tab visible and try again.';
-    } finally { host.style.visibility = ''; }
+      save.disabled = !selection;
+      text.textContent = error.message || 'Could not save. Try again.';
+    } finally { host.style.removeProperty('visibility'); }
   }
-  save.onmousedown = e => e.preventDefault();
-  save.onclick = () => {
-    const value = window.getSelection()?.toString().trim();
-    if (value) submit({ kind:'text', value });
-    else text.textContent = 'Select a passage first, or click an image.';
-  };
-  document.addEventListener('click', e => {
-    const image = e.target.closest?.('img');
-    if (!image || busy) return;
+  document.addEventListener('click',e => {
+    if (busy || e.target === host) return;
+    const image = e.composedPath().find(node => node instanceof HTMLImageElement) ||
+      document.elementsFromPoint(e.clientX,e.clientY).find(node => node instanceof HTMLImageElement);
+    if (!image) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     const r = image.getBoundingClientRect();
-    const left = Math.max(0,r.left), top = Math.max(0,r.top);
-    const right = Math.min(innerWidth,r.right), bottom = Math.min(innerHeight,r.bottom);
-    submit({ kind:'image', alt:image.alt, imageUrl:image.currentSrc, rect:[left/innerWidth,top/innerHeight,right/innerWidth,bottom/innerHeight] });
-  }, options);
+    const rect = [Math.max(0,r.left)/innerWidth,Math.max(0,r.top)/innerHeight,
+      Math.min(innerWidth,r.right)/innerWidth,Math.min(innerHeight,r.bottom)/innerHeight];
+    submit({kind:'image',alt:image.alt,imageUrl:image.currentSrc,rect});
+  },options);
+  return true;
 }
