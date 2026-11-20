@@ -18,7 +18,7 @@ async function search(term, request) {
 
 export async function findPolymarket(queries, request = fetch, cached = (_, load) => load()) {
   const responses = await Promise.allSettled(queries.slice(0, 8).map((term) => cached(
-    `Polymarket:3:${term.toLowerCase()}`, async () => polymarketGroups(await search(term, request)),
+    `Polymarket:4:${term.toLowerCase()}`, async () => polymarketGroups(await search(term, request)),
   )));
   const successes = responses.filter((result) => result.status === 'fulfilled');
   if (responses.length && !successes.length) throw new Error('Polymarket search is unavailable.');
@@ -81,6 +81,8 @@ export function polymarketGroups(events, now = Date.now()) {
     for (const market of active) {
       const marketId = market.conditionId || market.id;
       if (!marketId) continue;
+      const conditionId = typeof market.conditionId === 'string' && /^0x[a-f\d]{64}$/i.test(market.conditionId)
+        ? market.conditionId.toLowerCase() : null;
       const labels = decodeArray(market.outcomes);
       const assets = decodeArray(market.clobTokenIds);
       const prices = decodeArray(market.outcomePrices);
@@ -110,6 +112,7 @@ export function polymarketGroups(events, now = Date.now()) {
         const asset = assets[index];
         group.outcomes.push({
           label: combine ? shortText(market.groupItemTitle || market.question, 150) : label,
+          conditionId,
           historyId: typeof asset === 'string' && /^\d+$/.test(asset) ? asset : null,
           quotes,
           expiry: market.endDate || event.endDate || null,

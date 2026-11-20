@@ -143,6 +143,10 @@ button.context-button { color: #145041; }
 .context-content blockquote { margin: 0 0 10px; padding-left: 7px; border-left: 2px solid #8eafa0; color: #43564e; overflow-wrap: anywhere; }
 .market-rules { white-space: pre-wrap; }
 .context-links { display: flex; flex-wrap: wrap; gap: 5px 12px; font-size: 11px; }
+.polygon-check { margin-top: 12px; }
+.polygon-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.polygon-controls select { max-width: 100%; font: inherit; }
+.polygon-check p { margin: 6px 0 0; }
 a { color: #145041; }
 .rules-dialog { max-width:90vw; max-height:80vh; border:1px solid #b8c8bd; border-radius:8px; color:inherit; }
 .rules-dialog::backdrop { background:#14271e55; }

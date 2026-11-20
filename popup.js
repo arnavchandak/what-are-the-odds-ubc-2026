@@ -6,6 +6,7 @@ import { historyKey } from './history.js';
 import { DEFAULT_RANGE, MAX_PLOTTED, RANGES } from './chart-ranges.js';
 import { marketContexts } from './market-context.js';
 import { additionalOutcomes } from './outcomes.js';
+import { CONDITIONAL_TOKENS } from './polygon.js';
 
 const KEY = 'anthropicApiKey';
 const settings = document.querySelector('#settings');
@@ -121,6 +122,45 @@ async function requestChart(slot, retry = false) {
   if ((slot.period === period || period === DEFAULT_RANGE) && chartSlots.get(slot.id) === slot) updateChart(slot);
 }
 
+function appendPolygonCheck(body, market) {
+  if (market.venue !== 'Polymarket') return;
+  const conditions = new Map([...market.outcomes, ...additionalOutcomes(market)]
+    .filter(({ conditionId }) => conditionId)
+    .map(({ conditionId, label }) => [conditionId, label]));
+  if (!conditions.size) return;
+
+  const section = element('section', '', 'polygon-check');
+  section.append(element('h3', 'Onchain market'));
+  const picker = element('select', '');
+  picker.setAttribute('aria-label', 'Market outcome to check');
+  for (const [id, label] of conditions) {
+    const option = element('option', label);
+    option.value = id;
+    picker.append(option);
+  }
+  const check = element('button', 'Check on Polygon', 'context-button');
+  check.type = 'button';
+  const result = element('p', '');
+  result.setAttribute('role', 'status');
+  picker.onchange = () => { result.textContent = ''; };
+  check.onclick = async () => {
+    check.disabled = picker.disabled = true;
+    result.textContent = 'Reading Polygon…';
+    const reply = await chrome.runtime.sendMessage({
+      type: 'polygon-condition', conditionId: picker.value,
+    }).catch(() => null);
+    result.textContent = Number.isInteger(reply?.slots)
+      ? (reply.slots ? `Registered on Polygon · ${reply.slots} outcome slots.` : 'Condition not found on Polygon.')
+      : (reply?.error || 'Could not read Polygon. Try again.');
+    check.disabled = picker.disabled = false;
+  };
+  const controls = element('div', '', 'polygon-controls');
+  if (conditions.size > 1) controls.append(picker);
+  controls.append(check, link('View contract ↗', `https://polygonscan.com/address/${CONDITIONAL_TOKENS}#readContract`));
+  section.append(controls, result);
+  body.append(section);
+}
+
 function renderContext(market, back, backButton, source) {
   const header = element('div', '', 'context-heading');
   header.append(element('h2', 'Market context'), backButton);
@@ -160,6 +200,7 @@ function renderContext(market, back, backButton, source) {
     links.append(anchor);
   }
   if (links.childElementCount) body.append(links);
+  appendPolygonCheck(body, market);
   if (!body.childElementCount) body.append(element('p', 'No additional context is available.'));
   back.append(header, body);
 }

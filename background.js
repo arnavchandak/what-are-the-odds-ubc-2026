@@ -6,9 +6,10 @@ import { loadHistories } from './history.js';
 import { marketCache } from './market-cache.js';
 import { lookupFingerprint, lookupMarkets } from './lookup.js';
 import { additionalOutcomes } from './outcomes.js';
+import { readCondition } from './polygon.js';
 
 const KEY = 'anthropicApiKey';
-const CACHE_VERSION = 6;
+const CACHE_VERSION = 7;
 const TTL_MS = 10 * 60 * 1000;
 const LOOKUP_LIMIT = 40;
 const lookups = new Map();
@@ -133,6 +134,13 @@ chrome.runtime.onMessage.addListener((message, sender, send) => {
   }
   if (message.type === 'save-clip' && sender.id === chrome.runtime.id) {
     storePageClip(message.clip, sender).then(() => send({ saved:true }), error => send({ error:error.message || 'Could not save clipping.' }));
+    return true;
+  }
+  if (message.type === 'polygon-condition' && sender.id === chrome.runtime.id) {
+    readCondition(message.conditionId).then(
+      (slots) => send({ slots }),
+      () => send({ error: 'Could not read Polygon. Try again.' }),
+    );
     return true;
   }
   if (message.type !== 'chart' || sender.id !== chrome.runtime.id) return;

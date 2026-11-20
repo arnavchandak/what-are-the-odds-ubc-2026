@@ -12,7 +12,8 @@
     "https://api.gemini.com/*",
     "https://api.anthropic.com/*",
     "https://gamma-api.polymarket.com/*",
-    "https://clob.polymarket.com/*"
+    "https://clob.polymarket.com/*",
+    "https://polygon.drpc.org/*"
   ],
   "background": {
     "service_worker": "background.js",

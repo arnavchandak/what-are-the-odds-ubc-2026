@@ -41,6 +41,7 @@ const polyEvent = {
     bestBid: 0.44, bestAsk: 0.46, lastTradePrice: 0.46,
   }],
 };
+const polyCondition = '0x' + 'ab'.repeat(32);
 
 function providers(matches, { onRequest = () => {} } = {}) {
   let first = true;
@@ -52,7 +53,9 @@ function providers(matches, { onRequest = () => {} } = {}) {
     }
     if (url.host === 'gamma-api.polymarket.com') {
       assert.equal(options.headers, undefined);
-      return Response.json({ events: [polyEvent] });
+      return Response.json({ events: [{
+        ...polyEvent, markets: [{ ...polyEvent.markets[0], conditionId: polyCondition }],
+      }] });
     }
     const payload = JSON.parse(options.body);
     assert.equal(options.headers['x-api-key'], 'fake-key');
@@ -80,6 +83,7 @@ test('falls back to the Polymarket outcome token when Gemini has no close match'
   assert.equal(markets.length, 1);
   assert.equal(markets[0].venue, 'Polymarket');
   assert.equal(markets[0].outcomes[0].historyId, '123');
+  assert.equal(markets[0].outcomes[0].conditionId, polyCondition);
   assert.equal(markets[0].source, 'https://polymarket.com/event/year-end-bitcoin');
   assert.deepEqual(markets[0].outcomes[0].quotes, { bid: 0.44, ask: 0.46, last: 0.46, price: 0.45 });
 });
