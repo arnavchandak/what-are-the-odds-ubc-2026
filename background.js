@@ -1,3 +1,4 @@
+import { storePageClip } from './clip-storage.js';
 import { readArticle } from './article.js';
 import { DEFAULT_RANGE, MAX_PLOTTED, RANGES } from './chart-ranges.js';
 import { loadHistories } from './history.js';
@@ -136,6 +137,10 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, send) => {
+  if (message.type === 'save-clip' && sender.id === chrome.runtime.id) {
+    storePageClip(message.clip, sender).then(() => send({ saved:true }), () => send({ error:'Could not save clipping.' }));
+    return true;
+  }
   if (message.type !== 'chart' || sender.id !== chrome.runtime.id) return;
   const { venue, period, historyIds } = message;
   const validators = { Gemini: /^[\w-]{1,120}$/, Polymarket: /^\d{1,80}$/ };

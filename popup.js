@@ -1,3 +1,5 @@
+import { pickClip } from './capture.js';
+import { tradeTicket } from './trade.js';
 import { formatOdds, renderChart, seriesColors } from './chart.js';
 import { historyKey } from './history.js';
 import { DEFAULT_RANGE, MAX_PLOTTED, RANGES } from './chart-ranges.js';
@@ -14,6 +16,7 @@ const status = document.querySelector('#status');
 const results = document.querySelector('#results');
 const chartSlots = new Map();
 const contexts = marketContexts();
+let articleTab;
 let hasKey = false;
 let loading = false;
 
@@ -70,7 +73,8 @@ function updateChart(slot) {
   const lines = selected.map(({ key, label, color }) => ({ label, color, points: points[key] }));
   const waiting = selected.some(({ key }) => pending.has(key));
   const baseline = rangeData(slot, DEFAULT_RANGE).points;
-  legend.replaceChildren(...selected.map(({ label, color, key, quote }) => {
+  legend.replaceChildren(...selected.map((item) => {
+    const { label, color, key, quote } = item;
     const row = element('li', '', 'outcome');
     const marker = element('span', '', 'series-marker');
     marker.style.setProperty('--series-color', color);
@@ -80,7 +84,14 @@ function updateChart(slot) {
     odds.title = quote != null ? 'Latest market price' : 'Last recorded price in the default history window';
     const name = element('span', label, 'outcome-name');
     name.prepend(marker);
-    row.append(name, odds);
+    const button = element('button', '', 'legend-button');
+    button.title = 'Demo trade · ' + label;
+    button.append(name, odds);
+    button.onclick = () => {
+      slot.tradeItem = item;
+      tradeTicket(slot.ticket, slot.marketKey, item, price);
+    };
+    row.append(button);
     return row;
   }));
 
@@ -89,6 +100,7 @@ function updateChart(slot) {
   else if (waiting && !hasLine) chart.textContent = 'Loading price history…';
   else renderChart(chart, lines, period);
 
+  if (!selected.includes(slot.tradeItem)) slot.ticket.hidden = true;
   slot.latest.hidden = !selected.length;
   chart.setAttribute('aria-busy', String(waiting));
 }
@@ -156,8 +168,11 @@ function renderMarket(market, histories) {
   const latest = element('aside', '', 'market-latest');
   latest.setAttribute('aria-label', 'Latest odds');
   const legend = element('ul', '', 'outcomes');
-  latest.append(element('div', 'Latest odds', 'latest-label'), legend);
-  plot.append(chart, latest);
+  latest.append(legend);
+  plot.append(latest, chart);
+  const ticket = element('section', '', 'trade-ticket');
+  ticket.hidden = true;
+  const marketKey = JSON.stringify([market.venue, market.group || market.source || market.title]);
   const series = [...market.outcomes, ...additionalOutcomes(market)].map((outcome, index) => ({
     key: historyKey(market.venue, outcome),
     historyId: outcome.historyId,
@@ -166,7 +181,7 @@ function renderMarket(market, histories) {
     selected: index < market.outcomes.length,
     color: seriesColors[index],
   }));
-  const slot = { id: market.id, venue: market.venue, chart, legend, latest, period: DEFAULT_RANGE, series, histories: new Map() };
+  const slot = { ticket, marketKey, id: market.id, venue: market.venue, chart, legend, latest, period: DEFAULT_RANGE, series, histories: new Map() };
   chartSlots.set(slot.id, slot);
   const initial = rangeData(slot, DEFAULT_RANGE);
   if (histories) Object.assign(initial.points, histories);
@@ -228,8 +243,18 @@ function renderMarket(market, histories) {
   contextButton.setAttribute('aria-expanded', 'false');
   const source = link('View source ↗', market.source);
   footer.append(contextButton);
+  const clip = element('button', 'Clip from page', 'context-button');
+  clip.onclick = async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active:true, currentWindow:true });
+      if (tab?.id !== articleTab?.id || tab?.url !== articleTab?.url) throw Error('Tab changed');
+      await chrome.scripting.executeScript({ target:{ tabId:tab.id }, func:pickClip, args:[{key:marketKey,title:market.title}] });
+      if (location.protocol === 'chrome-extension:') window.close();
+    } catch { showStatus('Reopen the popup on the article to clip from it.', true); }
+  };
+  footer.append(clip);
   if (source) footer.append(source);
-  front.append(controls, plot, footer);
+  front.append(controls, plot, ticket, footer);
   contexts.bind({ card, front, back, contextButton, backButton, prepareContext: () => {
     if (!back.childElementCount) renderContext(market, back, backButton, source);
   } });
@@ -260,6 +285,7 @@ async function startLookup(forceRefresh = false) {
   };
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    articleTab = tab;
     if (!Number.isInteger(tab?.id) || !/^https?:\/\//.test(tab?.url || '')) {
       showStatus('Open a web article to see matching markets.');
       finish();

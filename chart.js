@@ -41,14 +41,14 @@ export function renderChart(element, series, period) {
   const { bottom, top, ticks } = chartScale(Math.min(...prices), Math.max(...prices));
 
   const canvas = document.createElement('canvas');
-  canvas.width = 464;
-  canvas.height = available.length > 1 ? 266 : 212;
+  canvas.width = 680;
+  canvas.height = available.length > 1 ? 280 : 226;
   canvas.setAttribute('role', 'img');
   canvas.setAttribute('aria-label', `Recent market odds. ${available.map(({ label, points }) =>
     `${label}: ${formatOdds(points[0][1])} to ${formatOdds(points.at(-1)[1])}`).join('. ')}`);
   const ctx = canvas.getContext('2d');
-  const left = 60;
-  const right = canvas.width - 9;
+  const left = 7;
+  const right = canvas.width - 68;
   const high = 18;
   const low = canvas.height - 19;
   const x = (timestamp) => left + ((timestamp - firstTime) / (lastTime - firstTime)) * (right - left);
@@ -62,7 +62,7 @@ export function renderChart(element, series, period) {
   ctx.setLineDash([4, 5]);
   for (const level of ticks) {
     const row = y(level);
-    ctx.fillText(formatOdds(level), 0, row);
+    ctx.fillText(formatOdds(level), right + 9, row);
     ctx.beginPath();
     ctx.moveTo(left, row);
     ctx.lineTo(right, row);

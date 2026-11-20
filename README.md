@@ -1,6 +1,6 @@
 # Headline Odds
 
-Headline Odds is a read-only Chrome extension that finds prediction markets related to the article you are reading. It puts price history, the latest odds, and the settlement rules alongside the story.
+Headline Odds is a Chrome extension that finds prediction markets related to the article you are reading. It puts price history, the latest odds, and the settlement rules alongside the story.
 
 Built for the University Blockchain Conference Hackathon 2026. See the [submission handoff](docs/SUBMISSION.md) for the proposed track, Gemini integration and remaining eligibility requirements.
 
@@ -10,15 +10,17 @@ Built for the University Blockchain Conference Hackathon 2026. See the [submissi
 
 With Node.js 22 or newer, run `npm run demo` from this directory and open [the local judge preview](http://127.0.0.1:4178/). There are no npm dependencies to install. The demo uses the actual popup renderer and a clearly labelled fictional article with sample data. Range switching, outcome selection and the full Context view work without external requests.
 
-![Headline Odds judge preview with the latest odds to the right of the chart](docs/images/judge-preview.png)
+![Headline Odds judge preview with a clickable outcome legend above the chart](docs/images/judge-preview.png)
 
 ### Chrome extension with live markets
 
 1. Open `chrome://extensions`, enable **Developer mode**, select **Load unpacked**, and choose this repository folder.
 2. Open a regular news article. Click the Headline Odds toolbar icon, open **Settings**, and save your own Anthropic API key. Live matching uses Anthropic API credits. The Anthropic organization must allow direct browser requests.
-3. Open Headline Odds on the article. Choose **24H**, **7D**, or **30D** to change the chart. The color-coded latest odds stay in the column to its right. **Outcomes** selects up to five plotted contracts.
+3. Open Headline Odds on the article. Choose **24H**, **7D**, or **30D** to change the chart. The legend above the chart shows each outcome and its latest odds. The percentage scale runs down the right. **Outcomes** selects up to five plotted contracts.
 4. Select **Context** to read the full available article connection and settlement text, including source links where available. Select **Back to odds** or press Escape to return.
-5. Use **Refresh** for fresh exchange data. The extension can reuse a recent Claude match judgment for identical candidate details within one hour.
+5. Click a name in the legend to open its demo ticket. Choose **Yes** or **No**, enter a share quantity and buy or sell. Each browser profile starts with $1,000 in simulated cash. Orders fill at the displayed reference probability (or its complement for No) and persist locally.
+6. Choose **Clip from page** on a market. Highlight text and press **Save selection**, or click an image to save its visible portion. **Info Library** opens a separate tab with market filters and links back to each article. The library uses local IndexedDB and needs no account.
+7. Use **Refresh** for fresh exchange data. The extension can reuse a recent Claude match judgment for identical candidate details within one hour.
 
 ## Architecture
 

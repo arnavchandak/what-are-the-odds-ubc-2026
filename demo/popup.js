@@ -38,6 +38,9 @@ const documentFromPopup = new DOMParser().parseFromString(await response.text(),
 document.body.replaceChildren(...[...documentFromPopup.body.children].filter((child) => child.tagName !== 'SCRIPT'));
 const fakeKey = { anthropicApiKey: 'fixture' };
 Object.assign(globalThis.chrome ??= {}, {
+  scripting: { async executeScript({ args }) {
+    parent.document.dispatchEvent(new parent.CustomEvent('sample-clip', { detail:args[0] }));
+  } },
   storage: { local: { setAccessLevel: async () => {}, get: async () => fakeKey, set: async () => {}, remove: async () => {} } },
   tabs: { query: async () => [{ id: 1, url: 'https://sample.invalid/article' }] },
   runtime: {

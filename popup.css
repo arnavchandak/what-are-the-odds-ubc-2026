@@ -59,7 +59,7 @@ input { width: 100%; border: 1px solid #9aaba3; border-radius: 6px; padding: 7px
 .market-front, .market-back { padding: 12px; }
 .market h2 { font-size: 14px; line-height: 1.35; margin: 0; }
 .market-plot {
-  display: flex;
+  display: block;
   margin: 9px 0 7px;
   padding: 7px;
   border-radius: 6px;
@@ -69,13 +69,23 @@ input { width: 100%; border: 1px solid #9aaba3; border-radius: 6px; padding: 7px
 .market-chart { flex: 1; min-width: 0; font-size: 11px; }
 .market-chart[aria-busy="true"]:not(:has(canvas)) { min-height: 112px; align-content: center; text-align: center; }
 .market-chart canvas { display: block; width: 100%; height: auto; }
-.market-latest { flex: 0 0 96px; padding-left: 8px; margin-left: 7px; border-left: 1px solid #d9e1dd; }
-.latest-label { font-size: 10px; color: #43564e; font-weight: 650; }
-.outcomes { display: grid; gap: 5px; list-style: none; padding: 0; margin: 5px 0 0; }
-.outcome { font-size: 10px; line-height: 1.25; min-width: 0; }
-.outcome-name { display: flex; align-items: baseline; gap: 4px; overflow-wrap: anywhere; }
-.series-marker { flex: 0 0 6px; height: 6px; margin-top: 3px; align-self: flex-start; background: var(--series-color); border-radius: 50%; }
-.outcome-odds { display: block; margin-left: 10px; color: #18242c; font-variant-numeric: tabular-nums; font-weight: 550; }
+.outcomes { display:flex; flex-wrap:wrap; gap:3px 6px; list-style:none; padding:0; margin:0 0 7px; }
+button.legend-button { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px; background:transparent; color:#31483e; }
+button.legend-button:hover { background:#e4ece6; }
+.outcome-name { display:inline-flex; align-items:center; gap:4px; font-weight:500; }
+.series-marker { width:7px; height:7px; background:var(--series-color); border-radius:50%; }
+.outcome-odds { font-variant-numeric:tabular-nums; }
+.library-link { align-self:center; font-size:12px; font-weight:650; margin-right:4px; }
+.trade-ticket { background:#f1f5f2; padding:8px; border-radius:6px; margin-bottom:8px; font-size:12px; }
+.trade-line { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px; }
+.trade-line button { padding:4px 8px; margin-left:4px; font-size:12px; }
+.trade-line label { margin:0; }
+.trade-line input { width:65px; padding:3px; }
+.trade-ticket small { display:block; }
+button.side.no { background:#982e41; }
+button.side.yes { background:#176749; }
+button.side[aria-pressed=false] { opacity:.64; }
+button.side[aria-pressed=true] { outline:2px solid #26392f; outline-offset:1px; }
 .chart-axis { display: flex; justify-content: space-between; gap: 4px; font-variant-numeric: tabular-nums; }
 .extension-popup .chart-axis span { white-space: nowrap; }
 .market footer, .context-heading {
