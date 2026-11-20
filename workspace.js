@@ -64,3 +64,12 @@ export function demoAccount(order) {
     };
   });
 }
+
+export function saveRecoveredMarket(id, market) {
+  return transact('clips','readwrite',store => {
+    const req = store.get(id);
+    req.onsuccess = () => {
+      if (req.result?.market.key === market.key) store.put({...req.result,market});
+    };
+  });
+}

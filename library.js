@@ -1,6 +1,6 @@
-import { listClips } from './workspace.js';
+import { listClips, saveRecoveredMarket } from './workspace.js';
 import { formatOdds, renderChart } from './chart.js';
-import { recoverMarket } from './saved-market.js';
+import { hasChart, recoverMarket } from './saved-market.js';
 
 const main = document.querySelector('#clips');
 const title = document.querySelector('h1');
@@ -131,10 +131,7 @@ async function load() {
       groups.get(clip.market.key).push(clip);
     }
     const selected = key ? [groups.get(key)].filter(Boolean) : [...groups.values()];
-    const markets = await Promise.all(selected.map(async clips => {
-      const stored = clips.find(c => c.market.lines?.some(line => line.points.length >= 2))?.market;
-      return stored || await recoverMarket(clips).catch(() => null) || clips[0].market;
-    }));
+    const markets = selected.map(clips => clips.find(c => hasChart(c.market))?.market || clips[0].market);
     if (version !== loadVersion) return;
     urls.forEach(url => URL.revokeObjectURL(url));
     urls = [];
@@ -147,6 +144,28 @@ async function load() {
       document.title = title.textContent + ' · Info Library';
       main.replaceChildren(...detail(markets[0],selected[0]));
     } else main.replaceChildren(...selected.map((clips,i) => marketTile(markets[i],clips)));
+    const boxes = [...main.querySelectorAll('.snapshot')];
+    await Promise.all(selected.map(async (clips,index) => {
+      if (hasChart(markets[index])) return;
+      const box = boxes[index];
+      box.textContent = 'Restoring market chart…';
+      const restored = await recoverMarket(clips).catch(() => null);
+      if (version !== loadVersion) return;
+      if (!restored) {
+        box.textContent = 'Price history is unavailable for this saved market. ';
+        const retry = make('button','Retry','text-button');
+        retry.onclick = load;
+        box.append(retry);
+        return;
+      }
+      await saveRecoveredMarket(clips[0].id,restored).catch(() => {});
+      if (version !== loadVersion) return;
+      if (key) {
+        urls.forEach(url => URL.revokeObjectURL(url));
+        urls = [];
+        main.replaceChildren(...detail(restored,clips));
+      } else box.replaceWith(chart(restored));
+    }));
   } catch { main.textContent = 'Could not open saved clippings.'; }
 }
 window.addEventListener('focus',load);
