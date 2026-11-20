@@ -41,16 +41,20 @@ export function renderChart(element, series, period) {
   const { bottom, top, ticks } = chartScale(Math.min(...prices), Math.max(...prices));
 
   const canvas = document.createElement('canvas');
-  canvas.width = 680;
-  canvas.height = available.length > 1 ? 280 : 226;
+  const width = 680;
+  const height = available.length > 1 ? 280 : 226;
+  const density = Math.max(2, window.devicePixelRatio);
+  canvas.width = width * density;
+  canvas.height = height * density;
   canvas.setAttribute('role', 'img');
   canvas.setAttribute('aria-label', `Recent market odds. ${available.map(({ label, points }) =>
     `${label}: ${formatOdds(points[0][1])} to ${formatOdds(points.at(-1)[1])}`).join('. ')}`);
   const ctx = canvas.getContext('2d');
+  ctx.scale(density, density);
   const left = 7;
-  const right = canvas.width - 84;
+  const right = width - 84;
   const high = 18;
-  const low = canvas.height - 19;
+  const low = height - 19;
   const x = (timestamp) => left + ((timestamp - firstTime) / (lastTime - firstTime)) * (right - left);
   const y = (value) => low - ((value - bottom) / (top - bottom)) * (low - high);
 
@@ -92,7 +96,7 @@ export function renderChart(element, series, period) {
 
   const axis = document.createElement('div');
   axis.className = 'chart-axis';
-  axis.style.marginInline = `${left / canvas.width * 100}% ${(canvas.width - right) / canvas.width * 100}%`;
+  axis.style.marginInline = `${left / width * 100}% ${(width - right) / width * 100}%`;
   let format = date;
   if (date.format(firstTime) === date.format(lastTime)) format = time;
   else if (period === '24H') format = shortDateTime;

@@ -136,8 +136,9 @@ function renderContext(market, back, backButton, source) {
     }
     return excerpt.trim() || fallback;
   }
-  const reason = paragraph(market.articleConnection || market.articleQuote, 'See the linked article for the full market connection.');
-  if (reason) body.append(element('h3', 'Why it matches'), element('p', reason));
+  body.append(element('p', market.title, 'context-question'));
+  const reason = paragraph(market.articleConnection, market.articleQuote) || market.articleQuote;
+  if (reason) body.append(element('p', reason, 'article-context'));
   const rulesLink = link('Full rules ↗', market.termsUrl);
   const resolution = link('Resolution source ↗', market.resolutionSource);
   const rules = paragraph(market.rules || (!resolution && market.resolutionSource), 'See the full settlement terms for this market.');
@@ -245,7 +246,7 @@ function renderMarket(market, histories, fetchedAt) {
 
   const footer = element('footer', '');
   const contextButton = element('button', 'Context', 'context-button');
-  const backButton = element('button', 'Back to odds', 'context-button');
+  const backButton = element('button', '← Back to odds', 'back-to-odds');
   contextButton.type = backButton.type = 'button';
   contextButton.setAttribute('aria-controls', back.id);
   contextButton.setAttribute('aria-expanded', 'false');

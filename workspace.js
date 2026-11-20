@@ -38,7 +38,7 @@ export function demoAccount(order) {
       const account = req.result || { cash: 10000000, positions: {} }; // $1,000 in hundredths of a cent
       try {
         if (order) {
-          const { position, action, price, amountCents } = order;
+          const { position, action, price, amountCents, marketKey, outcome, side } = order;
           const amount = amountCents * 100;
           if (!Number.isInteger(price) || price <= 0 || price >= 10000 ||
               !Number.isSafeInteger(amountCents) || !Number.isSafeInteger(amount) || amount <= 0 ||
@@ -56,6 +56,10 @@ export function demoAccount(order) {
           } else if (action === 'Buy' && (!holding || Number.isFinite(account.averageEntry[position]))) {
             const priorCost = holding * (account.averageEntry[position] || 0);
             account.averageEntry[position] = (priorCost + amount) / account.positions[position];
+          }
+          if (marketKey) {
+            account.lastActions ??= {};
+            account.lastActions[marketKey] = { action, amountCents, outcome, side };
           }
           store.put(account, 'paper');
         }

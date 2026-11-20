@@ -1,13 +1,12 @@
 {
-  "name": "headline-odds",
-  "version": "0.8.0",
+  "name": "what-are-the-odds-ubc-2026",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "demo": "node demo/serve.js",
-    "check": "node --check popup.js && node --check background.js && node --check demo/popup.js",
-    "verify:gemini": "node demo/verify-gemini.js"
+    "check": "node --check popup.js && node --check background.js && node --check library.js && node --check trade.js",
+    "verify:gemini": "node scripts/verify-gemini.js"
   },
   "engines": {
     "node": ">=22"

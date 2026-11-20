@@ -11,6 +11,7 @@ export function marketContexts() {
     contextButton.setAttribute('aria-expanded', String(open));
     card.classList.toggle('is-context-open',open);
     if (focus || open) (open ? backButton : contextButton).focus({preventScroll:true});
+    if (open) card.scrollIntoView({block:'nearest'});
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { from.hidden = true; return; }
     Object.assign(from.style,{position:'absolute',inset:'0 0 auto',pointerEvents:'none'});
     const sign = open ? 1 : -1;

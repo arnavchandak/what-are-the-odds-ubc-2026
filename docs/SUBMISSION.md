@@ -1,28 +1,21 @@
-# UBC 2026 submission handoff
+# UBC 2026 submission notes
 
-The submission deadline is **Friday, November 20 at noon CST**. Finals are in person on **Saturday, November 21**. The organizer requires eligible work built within the hackathon window, a team of one to four, one main track, and in-person finals attendance for prizes. The builder should confirm team details, participation, authorship, and any AI assistance before submitting. [Devpost overview](https://ubc-hackathon-2026.devpost.com/) · [Devpost rules](https://ubc-hackathon-2026.devpost.com/rules) · [Official guide](https://docs.google.com/document/d/1QaySCo7u3VxMVNdk3C5Ab3ewc2E46AuLntti-Uzx5EY/edit)
+**What Are the Odds** brings Gemini Prediction Markets into the article you are reading. See the README for the unpacked Chrome setup, data flow, and Gemini integration.
 
-## Track and bounty
+## Devpost checklist
 
-| Selection | Readiness |
+The published deadline is **Friday, November 20, 2026 at noon CST**. The rules cover builds made during the event, teams of one to four, and in-person finals attendance for prize eligibility. [Devpost overview](https://ubc-hackathon-2026.devpost.com/) · [Official rules](https://ubc-hackathon-2026.devpost.com/rules) · [Organizer guide](https://docs.google.com/document/d/1QaySCo7u3VxMVNdk3C5Ab3ewc2E46AuLntti-Uzx5EY/edit)
+
+| Required | Status |
 | --- | --- |
-| Main track | **Consumer Applications** is the closest product fit. The guide requires interaction with a blockchain. The current extension reads exchange HTTP APIs and has no direct blockchain interaction. Resolve this before claiming the track. |
-| Chain award | **None** for this build. |
-| Gemini Prediction Markets bounty | The extension uses Gemini market-data endpoints, with live search and history checked. The guide also requires a qualifying main-track submission. |
-| Other bounties | No qualifying integrations in this build. |
-
-## Submission materials
-
-| Required material | Status |
-| --- | --- |
-| Project name and summary | Drafted below. |
-| Complete team roster and track selection | Confirm in Devpost after addressing the track gap. |
-| Public GitHub source and setup | Separate repository prepared with private visibility at the builder’s request. Devpost requires a public repo. |
-| Working demo or deployed app | Chrome unpacked extension with live setup documented in the README. A separate key-free local judge preview uses sample data. |
-| 2–3 minute video | See the demo walkthrough. The final submission needs a judge-accessible YouTube or Google Drive link. |
-| Technical documentation and technologies | README covers architecture, setup, sponsor integration, and data handling. |
-| Track-specific evidence | Direct blockchain interaction remains open. |
-| In-person finals and event build window | Builder to confirm on submission. |
+| Project name, short description, and complete team roster | Draft below. Confirm the roster in Devpost. |
+| Written responses and technologies used | Draft below. |
+| Public repository with source and setup | Source and instructions are ready. Repository visibility is private. |
+| Working demo or deployed app | Run the unpacked Chrome extension using the README. |
+| Judge-accessible 2–3 minute video | Add a YouTube or Google Drive link showing the current extension in action. |
+| Technical documentation | README includes setup, architecture, data handling, and the Gemini integration. |
+| Exactly one main track and its technical requirements | Consumer Applications is the closest fit. It requires blockchain interaction. This build uses exchange HTTP APIs and does not yet meet that requirement. |
+| Chain award and optional bounties | Chain award selection would be None. Gemini market data meets the API criterion. The bounty also requires a qualifying main-track entry. |
 
 ## Devpost draft
 
@@ -32,32 +25,32 @@ What Are the Odds
 
 **Short description**
 
-Prediction market context for the article you are reading, with price history, the latest odds and the complete available settlement rules.
+Gemini prediction market odds in the article you are reading, with price history, settlement rules, and a library for the evidence you collect.
 
 **What did you build?**
 
-What Are the Odds is a Chrome extension that surfaces prediction markets relevant to a news article. Each card brings the matching market, history, latest quotes and its settlement context into the popup.
+A Chrome extension that finds prediction markets tied to a news article. Readers can see how odds changed, check what settles each market, and save excerpts or images to a market brief. They can also try simulated positions.
 
 **What problem does it solve?**
 
-Readers have to switch tabs and search across exchanges to see whether there is a market for a story. Even a market with a similar title can answer a different question. What Are the Odds brings the quoted event and its settlement rules into the reading flow.
+A story can raise a question that a prediction market tracks, but finding the right contract takes time. Similar-looking markets can have different deadlines or settlement conditions. The extension shows the quoted event and its rules alongside the article.
 
 **How does it work?**
 
-With access to the active tab, the extension reads a bounded article excerpt. Claude extracts open questions and reviews candidate markets from Gemini and Polymarket against the article. The popup shows the matched outcomes and exchange price histories over 24 hours, seven days or 30 days.
+Claude extracts unresolved questions from an article excerpt and evaluates candidate markets by event, participants, and timeframe. The Gemini event API supplies contract metadata, quotes, and available terms. Gemini candles provide price history for the matching instruments. The browser stores clips and simulated positions locally.
 
 **What makes it unique?**
 
-The article is the starting point. Matching accounts for the event, actors and timeframe. Readers can then see why the market matches and read the settlement text before drawing conclusions from its odds.
+The article is the starting point. Readers can check what the article reports against a contract’s terms, then build a sourced brief around the same market. This keeps the evidence, the odds, and the resolution criteria in one place.
 
 **What would you build next?**
 
-Add onchain provenance for supported markets and evaluate matching quality and latency on an article set with verified matches.
+Add onchain provenance for supported markets and evaluate matching against a set of articles with independently verified outcomes and contract matches.
 
 **Technologies and sponsor tools**
 
-Chrome Manifest V3, JavaScript modules, HTML, CSS, Canvas, Claude Messages API, Gemini Prediction Markets event and candle endpoints, Polymarket event and price-history endpoints, and Node.js tests.
+Gemini Prediction Markets event and candle endpoints, Chrome Manifest V3, Claude Messages API, JavaScript, Canvas, IndexedDB, and Node.js.
 
 **Team**
 
-Arnav Chandak. Confirm the complete roster in Devpost.
+Arnav Chandak. Confirm the full roster before submission.

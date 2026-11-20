@@ -1,47 +1,33 @@
 # What Are the Odds
 
-What Are the Odds is a Chrome extension that finds prediction markets related to the article you are reading. It puts price history, the latest odds, and the settlement rules alongside the story.
+**UBC 2026 Hackathon · Prediction market context for the news**
 
-Built for the University Blockchain Conference Hackathon 2026. See the [submission handoff](docs/SUBMISSION.md) for the proposed track, Gemini integration and remaining eligibility requirements.
+What Are the Odds is a Chrome extension that finds prediction markets related to the article you are reading. It brings Gemini odds, price history, and settlement criteria into the same reading flow. Save passages and images to a market brief in the Info Library, or try positions with simulated cash.
 
-## Try it
+## Run the extension
 
-### Judge preview without credentials
+1. Clone or download this repository. In Chrome, open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked**. Select the repository folder.
+2. Open a news article, click the extension icon, and enter an Anthropic API key in **Settings**. The key needs Claude API access and permission for direct browser requests. Live matching uses Anthropic API credits.
+3. Open the popup to see matching markets. Switch chart ranges or outcomes, open **Context** for the article connection and settlement rules, or use **Clip from page** to save evidence.
+4. Choose **Trade**, select a side and dollar amount, and place a simulated buy or sell. The ticket shows cash, the open position, and the last completed order for that market.
 
-With Node.js 22 or newer, run `npm run demo` from this directory and open [the local judge preview](http://127.0.0.1:4178/). There are no npm dependencies to install. The demo uses the actual popup renderer and a clearly labelled fictional article with sample data. Range switching, outcome selection and the Context view work without external requests.
+## Gemini Prediction Markets
 
-![What Are the Odds judge preview with a clickable outcome legend above the chart](docs/images/judge-preview.png)
+- **Discovery.** The Gemini event API supplies event titles, contract labels and symbols, quotes, and available terms links. Gemini wins when both venues have matches at the same relevance level. Additional coverage comes from Polymarket when its matches are closer or Gemini has none.
+- **Price history.** Instrument symbols drive 24-hour, seven-day, and 30-day candle requests. Charts show exchange observations, with venue attribution in the Info Library’s Sources.
+- **Simulated positions.** The ticket uses reference prices and a local cash balance. All fills are simulated in the browser.
 
-### Chrome extension with live markets
-
-1. Open `chrome://extensions`, enable **Developer mode**, select **Load unpacked**, and choose this repository folder.
-2. Open a regular news article. Click the What Are the Odds toolbar icon, open **Settings**, and save your own Anthropic API key. Live matching uses Anthropic API credits. The Anthropic organization must allow direct browser requests.
-3. Open What Are the Odds on the article. Choose **24H**, **7D**, or **30D** to change the chart. The legend above the chart shows each outcome and its latest odds. The percentage scale runs down the right. **Outcomes** selects up to five plotted contracts.
-4. Select **Context** to read a short article connection and settlement excerpt, including source links where available. Select **Back to odds** or press Escape to return.
-5. Choose **Trade** and switch outcomes in the ticket, or click a name in the legend. Choose **Yes** or **No**, enter a dollar amount and buy or sell. Each browser profile starts with $1,000 in simulated cash. Orders fill at the displayed reference probability (or its complement for No) and persist locally. Open positions show their marked value and, when recorded, the weighted average entry price.
-6. Choose **Clip from page** on a market. Highlight text and press **Save text**, or click an image to save its visible portion. **Info Library** shows saved markets with chart snapshots. Open a market for sourced key points, upcoming events mentioned in the evidence, settlement criteria, and the original passages or images. The library uses local IndexedDB and needs no account.
-7. Use **Refresh** for fresh exchange data. The extension can reuse a recent Claude match judgment for identical candidate details within one hour.
+[Gemini event API](https://developer.gemini.com/rest-api/prediction-markets/events/list-events) · [Gemini candles API](https://developer.gemini.com/trading/rest-api/market-data/list-candles) · [Gemini verification notes](docs/GEMINI_VERIFICATION.md)
 
 ## Architecture
 
-```text
-Article tab
-  └─ article.js · Read a bounded excerpt when the popup opens
-       └─ background.js · Manifest V3 service worker and lookup cache
-            ├─ lookup.js / claude.js · Extract questions and judge market relevance
-            ├─ gemini.js / polymarket.js · Search events and normalize outcomes
-            └─ history.js · Retrieve, normalize and cache price histories
-                 └─ popup.js / chart.js · Render markets, ranges, latest odds and full context
-```
+1. `article.js` reads a bounded excerpt from the active tab. The Manifest V3 service worker orchestrates lookup, market requests, and caching.
+2. `lookup.js` uses Claude to extract unresolved questions and rank candidates by event, conditions, and timeframe. An exact article quote is checked against the input before display.
+3. `history.js` normalizes exchange history. The popup renders charts in Canvas and pairs article context with provider settlement terms.
+4. IndexedDB stores evidence, chart snapshots, and simulated positions in the Chrome profile. Older clips can recover a chart from the local cache or public venue history.
 
-- **Matching.** Claude extracts unresolved questions and search terms. Both venues are searched in parallel. Candidates are shortlisted by event and outcome relevance, then reviewed for a matching event, condition, and timeframe. A direct answer to the article’s main question ranks above a secondary match. Gemini wins a relevance tie.
-- **Gemini integration.** What Are the Odds uses Gemini Prediction Markets event search for market discovery and contract quotes, and Gemini instrument candles for chart history. Polymarket public market search and historical prices provide a second source. The extension displays probabilities from exchange price data and links to the provider’s available rules or source.
-- **Rendering and cache.** The extension sends quotes to the popup before history is ready. Article matches stay fresh for ten minutes, or one minute after a partial venue search. Exchange search results and history are reused across articles for 90 seconds and five minutes, respectively. The history cache is keyed by venue, instrument and chart range. The display takes the latest exchange price when available, with the last observation from the default window as fallback.
-- **Privacy.** Chrome grants page access when the user opens the extension. The live lookup sends the headline, publication date if available and up to 5,000 characters of readable article text to Anthropic. Gemini and Polymarket receive search terms and instrument identifiers. The API key is stored in the Chrome profile and sent to Anthropic to authenticate requests. Match snapshots, including selected quoted evidence, are cached locally. The full article excerpt is discarded after matching.
-- **Scope.** Market discovery, quotes and charts are read-only. The extension uses exchange HTTP APIs. Direct blockchain reads, wallets, order execution and chain awards are outside this build.
+Live lookup sends the article headline, up to 5,000 characters of readable text, and its publication date when available to Anthropic. The key stays in the Chrome profile and is sent to Anthropic for authentication. Market lookups send search terms and instrument identifiers to exchanges. Manually saved clips stay in the local library.
 
-## Verification
+With Node.js 22 or newer, run `npm run check` and `npm test`. `npm run verify:gemini` checks live Gemini discovery and history using public endpoints.
 
-Run `npm run check` and `npm test` with Node.js 22+. Run `npm run verify:gemini` for a credential-free check of live Gemini event search and chart history. Market availability changes. See the [dated Gemini check](docs/GEMINI_VERIFICATION.md) and [demo walkthrough](docs/DEMO.md).
-
-[Gemini event search](https://developer.gemini.com/rest-api/prediction-markets/events/list-events) · [Gemini candles](https://developer.gemini.com/trading/rest-api/market-data/list-candles) · [Polymarket event list](https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination) · [Polymarket batch history](https://docs.polymarket.com/api-reference/markets/get-batch-prices-history)
+[UBC 2026 submission notes](docs/SUBMISSION.md)
