@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Headline Odds | Judge Demo</title>
+  <style>
+    :root{font:16px/1.6 system-ui,sans-serif;color:#172821;background:#e9eee9}
+    *{box-sizing:border-box}
+    body{margin:0}
+    .shell{max-width:1160px;margin:auto;padding:32px 28px}
+    .demo-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:26px}
+    .brand{font-size:22px;font-weight:700;letter-spacing:-.04em}
+    .badge{font-size:12px;color:#164839;background:#dbe7de;border-radius:5px;padding:4px 9px}
+    .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,416px);gap:26px;align-items:start}
+    article{padding:26px;border:1px solid #d7dfd8;background:#fff;border-radius:12px}
+    article h1{font:600 clamp(25px,4vw,39px)/1.1 Georgia,serif;margin:6px 0 16px}
+    article p{margin:0 0 12px}
+    .byline{font-size:12px;color:#475c50}
+    .directions{font-size:13px;color:#475c50;margin-top:18px}
+    iframe{display:block;width:100%;height:min(690px,80vh);min-height:400px;border:1px solid #c9d7d0;border-radius:12px;background:#f7f8f6}
+    @media(max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}.shell{padding:16px}.demo-header{margin-bottom:16px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="demo-header"><div class="brand">Headline Odds</div><span class="badge">Judge preview · sample data</span></header>
+    <div class="grid">
+      <div>
+        <article>
+          <p class="byline">Sample article · Fictional city and markets</p>
+          <h1>Three sites shortlisted for Harbor City’s new rail station</h1>
+          <p>Harbor City has shortlisted North Wharf, Central Square and Oak Junction for its new station. The transit board is expected to announce its final selection after a public meeting.</p>
+          <p>The official board announcement will settle which site is selected. A shortlist or informal vote will not decide the outcome.</p>
+        </article>
+        <p class="directions">Switch the chart range, choose outcomes, or open Context to read the settlement rules. The preview reuses the extension UI with synthetic quotes and histories. It makes no Claude or exchange requests.</p>
+      </div>
+      <iframe title="Working Headline Odds popup preview" src="./popup.html"></iframe>
+    </div>
+  </main>
+</body>
+</html>
